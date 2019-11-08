@@ -102,16 +102,32 @@ func buildImportMap(interfaces []Interface) map[string]string {
 	for _, i := range interfaces {
 		for _, m := range i.Methods {
 			for _, p := range m.Params {
-				if p.Package == "" {
-					continue
-				}
-				if _, ok := importMap[p.Package]; !ok {
-					importMap[p.Package] = fmt.Sprintf("i%d", len(importMap))
+				for _, pkg := range resolvePackages(p) {
+					if _, ok := importMap[pkg]; !ok {
+						importMap[pkg] = fmt.Sprintf("i%d", len(importMap))
+					}
 				}
 			}
 		}
 	}
 	return importMap
+}
+
+func resolvePackages(p param) []string {
+	switch tp := p.(type) {
+	case namedParam:
+		return []string{tp.pkg}
+	case arrayParam:
+		return resolvePackages(tp.typ)
+	case sliceParam:
+		return resolvePackages(tp.typ)
+	case pointerParam:
+		return resolvePackages(tp.typ)
+	case mapParam:
+		return append(resolvePackages(tp.key), resolvePackages(tp.elem)...)
+	default:
+		return []string{}
+	}
 }
 
 func generateImports(b *strings.Builder, importMap map[string]string) {
@@ -132,10 +148,14 @@ func shouldSkipInterface(i Interface) bool {
 	return true
 }
 
+var contextNamedParam = namedParam{pkg: "context", typ: "Context"}
+
 func getFirstContextParamOffset(m method) (int, bool) {
 	for i, p := range m.Params {
-		if p.Package == "context" && p.Type == "Context" {
-			return i, true
+		if np, ok := p.(namedParam); ok {
+			if np == contextNamedParam {
+				return i, true
+			}
 		}
 	}
 	return 0, false
@@ -144,15 +164,33 @@ func getFirstContextParamOffset(m method) (int, bool) {
 func resolveParams(importMap map[string]string, params []param) []string {
 	resolved := make([]string, 0, len(params))
 	for _, p := range params {
-		var r string
-		if p.Package == "" {
-			r = p.Type
-		} else {
-			r = fmt.Sprintf("%s.%s", importMap[p.Package], p.Type)
-		}
-		resolved = append(resolved, r)
+		resolved = append(resolved, resolveParam(importMap, p))
 	}
 	return resolved
+}
+
+func resolveParam(importMap map[string]string, p param) string {
+	switch tp := p.(type) {
+	case basicParam:
+		return tp.typ
+	case namedParam:
+		if tp.pkg != "" {
+			return fmt.Sprintf("%s.%s", importMap[tp.pkg], tp.typ)
+		}
+		return tp.typ
+	case arrayParam:
+		return fmt.Sprintf("[%s]", resolveParam(importMap, tp.typ))
+	case sliceParam:
+		return fmt.Sprintf("[]%s", resolveParam(importMap, tp.typ))
+	case pointerParam:
+		return fmt.Sprintf("*%s", resolveParam(importMap, tp.typ))
+	case mapParam:
+		return fmt.Sprintf("map[%s]%s", resolveParam(importMap, tp.key), resolveParam(importMap, tp.elem))
+	case interfaceParam:
+		return ""
+	default:
+		return "<unsupported>"
+	}
 }
 
 func generateWrappedCall(b *strings.Builder, m method, params []string) {

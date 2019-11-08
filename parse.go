@@ -2,29 +2,10 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"go/types"
 
 	"golang.org/x/tools/go/packages"
 )
-
-type Interface struct {
-	Name    string
-	File    string
-	Methods []method
-}
-
-type method struct {
-	Name    string
-	Params  []param
-	Returns []param
-}
-
-type param struct {
-	Name    string
-	Type    string
-	Package string
-}
 
 func parseDir(dir string) ([]Interface, error) {
 	p, err := getPackage(dir)
@@ -88,39 +69,31 @@ func getParams(sig *types.Signature) []param {
 	for i := 0; i < tuple.Len(); i++ {
 		v := tuple.At(i)
 
-		typ, pkg := getParamType(v.Type())
-
-		p := param{
-			Name:    v.Name(),
-			Package: pkg,
-			Type:    typ,
-		}
-		params = append(params, p)
+		params = append(params, getParam(v.Type()))
 	}
 	return params
 }
 
-func getParamType(typ types.Type) (string, string) {
+func getParam(typ types.Type) param {
 	switch t := typ.(type) {
 	case *types.Basic:
-		return t.Name(), ""
-	case *types.Array:
-		subType, pkg := getParamType(t.Elem())
-		return fmt.Sprintf("[%s]", subType), pkg
-	case *types.Slice:
-		subType, pkg := getParamType(t.Elem())
-		return fmt.Sprintf("[]%s", subType), pkg
-	case *types.Pointer:
-		subType, pkg := getParamType(t.Elem())
-		return fmt.Sprintf("*%s", subType), pkg
+		return basicParam{typ: t.Name()}
 	case *types.Named:
 		if obj := t.Obj(); obj != nil {
 			var pkg string
 			if p := obj.Pkg(); p != nil {
 				pkg = p.Path()
 			}
-			return obj.Name(), pkg
+			return namedParam{typ: obj.Name(), pkg: pkg}
 		}
+	case *types.Array:
+		return arrayParam{typ: getParam(t.Elem())}
+	case *types.Slice:
+		return sliceParam{typ: getParam(t.Elem())}
+	case *types.Pointer:
+		return pointerParam{typ: getParam(t.Elem())}
+	case *types.Map:
+		return mapParam{key: getParam(t.Key()), elem: getParam(t.Elem())}
 	}
-	return "<unsupported type>", ""
+	return unsupportedParam{}
 }

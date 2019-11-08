@@ -7,14 +7,16 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-func parseDir(dir string) ([]Interface, error) {
+func ParseDir(dir string) (*Package, error) {
 	p, err := getPackage(dir)
 	if err != nil {
 		return nil, err
 	}
 	scope := p.Types.Scope()
 	names := scope.Names()
-	var interfaces []Interface
+	pkg := &Package{
+		Name: p.Name,
+	}
 	for _, name := range names {
 		obj := scope.Lookup(name)
 		itype, ok := obj.Type().Underlying().(*types.Interface)
@@ -25,15 +27,15 @@ func parseDir(dir string) ([]Interface, error) {
 				File:    file.Name(),
 				Methods: getMethods(itype),
 			}
-			interfaces = append(interfaces, iface)
+			pkg.Interfaces = append(pkg.Interfaces, iface)
 		}
 	}
-	return interfaces, nil
+	return pkg, nil
 }
 
 func getPackage(src string) (*packages.Package, error) {
 	conf := packages.Config{
-		Mode: packages.NeedTypes | packages.NeedImports,
+		Mode: packages.NeedName | packages.NeedTypes | packages.NeedImports,
 		Dir:  src,
 	}
 	pkgs, err := packages.Load(&conf)
@@ -55,16 +57,16 @@ func getMethods(itype *types.Interface) []method {
 		funcType := itype.Method(i)
 		sig := funcType.Type().(*types.Signature)
 		m := method{
-			Name:   funcType.Name(),
-			Params: getParams(sig),
+			Name:    funcType.Name(),
+			Params:  getParams(sig.Params()),
+			Returns: getParams(sig.Results()),
 		}
 		methods = append(methods, m)
 	}
 	return methods
 }
 
-func getParams(sig *types.Signature) []param {
-	tuple := sig.Params()
+func getParams(tuple *types.Tuple) []param {
 	params := make([]param, 0, tuple.Len())
 	for i := 0; i < tuple.Len(); i++ {
 		v := tuple.At(i)
@@ -87,7 +89,7 @@ func getParam(typ types.Type) param {
 			return namedParam{typ: obj.Name(), pkg: pkg}
 		}
 	case *types.Array:
-		return arrayParam{typ: getParam(t.Elem())}
+		return arrayParam{typ: getParam(t.Elem()), length: t.Len()}
 	case *types.Slice:
 		return sliceParam{typ: getParam(t.Elem())}
 	case *types.Pointer:

@@ -1,5 +1,10 @@
 package main
 
+type Package struct {
+	Name       string
+	Interfaces []Interface
+}
+
 type Interface struct {
 	Name    string
 	File    string
@@ -29,7 +34,8 @@ type namedParam struct {
 }
 
 type arrayParam struct {
-	typ param
+	typ    param
+	length int64
 }
 
 type sliceParam struct {

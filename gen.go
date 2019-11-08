@@ -2,11 +2,17 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
-func generate(interfaces []Interface) string {
+func Generate(pkg *Package) string {
 	var b strings.Builder
+
+	/*
+		package main
+	*/
+	fmt.Fprintf(&b, "package %s\n\n", pkg.Name)
 
 	/*
 		import (
@@ -15,10 +21,10 @@ func generate(interfaces []Interface) string {
 			i1 "some/dependency"
 		)
 	*/
-	importMap := buildImportMap(interfaces)
+	importMap := buildImportMap(pkg.Interfaces)
 	generateImports(&b, importMap)
 
-	for _, iface := range interfaces {
+	for _, iface := range pkg.Interfaces {
 		// Skip interfaces where no methods have context.Context as an argument
 		if shouldSkipInterface(iface) {
 			continue
@@ -31,8 +37,8 @@ func generate(interfaces []Interface) string {
 		*/
 		structName := fmt.Sprintf("trace%s", iface.Name)
 		fmt.Fprintf(&b, "type %s struct {\n", structName)
-		fmt.Fprintf(&b, "	wrapped %s\n", iface.Name)
-		fmt.Fprintf(&b, "}\n\n")
+		fmt.Fprintf(&b, "\twrapped %s\n", iface.Name)
+		fmt.Fprintf(&b, "}")
 
 		/* func NewExampleTracer(p0 Example) Example {
 			return traceExample {
@@ -40,10 +46,10 @@ func generate(interfaces []Interface) string {
 			}
 		}*/
 		generateMethodSig(&b, "", fmt.Sprintf("New%sTracer", iface.Name), []string{iface.Name}, []string{iface.Name})
-		fmt.Fprintf(&b, "\treturn %s {\n", structName)
+		fmt.Fprintf(&b, "\treturn %s{\n", structName)
 		fmt.Fprintf(&b, "\t\twrapped: p0,\n")
 		fmt.Fprintf(&b, "\t}\n")
-		fmt.Fprintf(&b, "}\n\n")
+		fmt.Fprintf(&b, "}")
 
 		/*
 			func (t traceExample) Foo(p0 context.Context, p1) i1.example {
@@ -52,25 +58,26 @@ func generate(interfaces []Interface) string {
 				return t.wrapped(p0,p1)
 			}
 		*/
-		for i, m := range iface.Methods {
+		for _, m := range iface.Methods {
 			params := resolveParams(importMap, m.Params)
 			returns := resolveParams(importMap, m.Returns)
 			generateMethodSig(&b, structName, m.Name, params, returns)
 			// only add tracing if there a context
 			offset, ok := getFirstContextParamOffset(m)
-			if ok && i == offset {
+			if ok {
 				fmt.Fprintf(&b, "\tctx, span := trace.ChildSpan(p%d)\n", offset)
 				fmt.Fprint(&b, "\tdefer span.Close()\n")
 			}
-			generateWrappedCall(&b, m, params)
-			fmt.Fprintf(&b, "}\n\n")
+			generateWrappedCall(&b, m, len(params))
+			fmt.Fprintf(&b, "}")
 		}
 	}
+	fmt.Fprint(&b, "\n")
 	return b.String()
 }
 
 func generateMethodSig(b *strings.Builder, implementor, methodName string, params, returns []string) {
-	fmt.Fprint(b, "func ")
+	fmt.Fprint(b, "\n\nfunc ")
 	if implementor != "" {
 		fmt.Fprintf(b, "(t %s) ", implementor)
 	}
@@ -81,15 +88,18 @@ func generateMethodSig(b *strings.Builder, implementor, methodName string, param
 			fmt.Fprint(b, ", ")
 		}
 	}
-	fmt.Fprint(b, ") ")
+	fmt.Fprint(b, ")")
+	if len(returns) > 0 {
+		fmt.Fprint(b, " ")
+	}
 	if len(returns) > 1 {
 		fmt.Fprint(b, "(")
 	}
 	for i, r := range returns {
-		fmt.Fprint(b, r)
-		if i < len(params)-1 {
+		if i > 0 {
 			fmt.Fprint(b, ", ")
 		}
+		fmt.Fprint(b, r)
 	}
 	if len(returns) > 1 {
 		fmt.Fprint(b, ")")
@@ -131,11 +141,14 @@ func resolvePackages(p param) []string {
 }
 
 func generateImports(b *strings.Builder, importMap map[string]string) {
+	var imports []string
 	for imp, alias := range importMap {
-		fmt.Fprintf(b, "import %s \"%s\"\n", alias, imp)
+		imports = append(imports, fmt.Sprintf("import %s \"%s\"", alias, imp))
 	}
-	if len(importMap) > 0 {
-		fmt.Fprintf(b, "\n")
+	sort.Strings(imports)
+	fmt.Fprintf(b, strings.Join(imports, "\n"))
+	if len(imports) > 0 {
+		fmt.Fprintf(b, "\n\n")
 	}
 }
 
@@ -179,7 +192,7 @@ func resolveParam(importMap map[string]string, p param) string {
 		}
 		return tp.typ
 	case arrayParam:
-		return fmt.Sprintf("[%s]", resolveParam(importMap, tp.typ))
+		return fmt.Sprintf("[%d]%s", tp.length, resolveParam(importMap, tp.typ))
 	case sliceParam:
 		return fmt.Sprintf("[]%s", resolveParam(importMap, tp.typ))
 	case pointerParam:
@@ -193,11 +206,15 @@ func resolveParam(importMap map[string]string, p param) string {
 	}
 }
 
-func generateWrappedCall(b *strings.Builder, m method, params []string) {
-	fmt.Fprintf(b, "\treturn t.wrapped.%s(", m.Name)
-	for i, p := range params {
-		fmt.Fprint(b, p)
-		if i != len(params)-1 {
+func generateWrappedCall(b *strings.Builder, m method, numParams int) {
+	fmt.Fprint(b, "\t")
+	if len(m.Returns) > 0 {
+		fmt.Fprint(b, "return ")
+	}
+	fmt.Fprintf(b, "t.wrapped.%s(", m.Name)
+	for i := 0; i < numParams; i++ {
+		fmt.Fprintf(b, "p%d", i)
+		if i != numParams-1 {
 			fmt.Fprint(b, ", ")
 		}
 	}

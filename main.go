@@ -8,9 +8,9 @@ import (
 func main() {
 	flag.Parse()
 	args := flag.Args()
-	interfaces, err := parseDir(args[0])
+	pkg, err := ParseDir(args[0])
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(generate(interfaces))
+	fmt.Println(Generate(pkg))
 }

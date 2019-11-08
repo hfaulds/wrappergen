@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"go/types"
 
 	"golang.org/x/tools/go/packages"
@@ -20,8 +21,9 @@ type method struct {
 }
 
 type param struct {
-	Name string
-	Type string
+	Name    string
+	Type    string
+	Package string
 }
 
 func parseDir(dir string) ([]Interface, error) {
@@ -85,11 +87,40 @@ func getParams(sig *types.Signature) []param {
 	params := make([]param, 0, tuple.Len())
 	for i := 0; i < tuple.Len(); i++ {
 		v := tuple.At(i)
+
+		typ, pkg := getParamType(v.Type())
+
 		p := param{
-			Name: v.Name(),
-			Type: types.TypeString(v.Type(), nil),
+			Name:    v.Name(),
+			Package: pkg,
+			Type:    typ,
 		}
 		params = append(params, p)
 	}
 	return params
+}
+
+func getParamType(typ types.Type) (string, string) {
+	switch t := typ.(type) {
+	case *types.Basic:
+		return t.Name(), ""
+	case *types.Array:
+		subType, pkg := getParamType(t.Elem())
+		return fmt.Sprintf("[%s]", subType), pkg
+	case *types.Slice:
+		subType, pkg := getParamType(t.Elem())
+		return fmt.Sprintf("[]%s", subType), pkg
+	case *types.Pointer:
+		subType, pkg := getParamType(t.Elem())
+		return fmt.Sprintf("*%s", subType), pkg
+	case *types.Named:
+		if obj := t.Obj(); obj != nil {
+			var pkg string
+			if p := obj.Pkg(); p != nil {
+				pkg = p.Path()
+			}
+			return obj.Name(), pkg
+		}
+	}
+	return "<unsupported type>", ""
 }

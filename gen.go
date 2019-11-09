@@ -55,7 +55,7 @@ func Generate(pkg *Package) string {
 			func (t traceExample) Foo(p0 context.Context, p1) i1.example {
 				ctx, span := trace.ChildSpan(p0)
 				defer span.Close()
-				return t.wrapped(p0,p1)
+				return t.wrapped.Foo(p0,p1)
 			}
 		*/
 		for _, m := range iface.Methods {
@@ -68,7 +68,7 @@ func Generate(pkg *Package) string {
 				fmt.Fprintf(&b, "\tctx, span := trace.ChildSpan(p%d)\n", offset)
 				fmt.Fprint(&b, "\tdefer span.Close()\n")
 			}
-			generateWrappedCall(&b, m, len(params))
+			generateWrappedCall(&b, m, len(params), offset)
 			fmt.Fprintf(&b, "}")
 		}
 	}
@@ -141,7 +141,9 @@ func resolvePackages(p param) []string {
 }
 
 func generateImports(b *strings.Builder, importMap map[string]string) {
-	var imports []string
+	imports := []string{
+		"import trace \"github.com/hfaulds/tracer/trace\"",
+	}
 	for imp, alias := range importMap {
 		imports = append(imports, fmt.Sprintf("import %s \"%s\"", alias, imp))
 	}
@@ -171,7 +173,7 @@ func getFirstContextParamOffset(m method) (int, bool) {
 			}
 		}
 	}
-	return 0, false
+	return -1, false
 }
 
 func resolveParams(importMap map[string]string, params []param) []string {
@@ -206,14 +208,18 @@ func resolveParam(importMap map[string]string, p param) string {
 	}
 }
 
-func generateWrappedCall(b *strings.Builder, m method, numParams int) {
+func generateWrappedCall(b *strings.Builder, m method, numParams, offset int) {
 	fmt.Fprint(b, "\t")
 	if len(m.Returns) > 0 {
 		fmt.Fprint(b, "return ")
 	}
 	fmt.Fprintf(b, "t.wrapped.%s(", m.Name)
 	for i := 0; i < numParams; i++ {
-		fmt.Fprintf(b, "p%d", i)
+		if i == offset {
+			fmt.Fprint(b, "ctx")
+		} else {
+			fmt.Fprintf(b, "p%d", i)
+		}
 		if i != numParams-1 {
 			fmt.Fprint(b, ", ")
 		}

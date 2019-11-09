@@ -4,6 +4,22 @@ import i0 "context"
 import i1 "bytes"
 import trace "github.com/hfaulds/tracer/trace"
 
+type traceanotherMethodsWithContext struct {
+	wrapped anotherMethodsWithContext
+}
+
+func NewanotherMethodsWithContextTracer(p0 anotherMethodsWithContext) anotherMethodsWithContext {
+	return traceanotherMethodsWithContext{
+		wrapped: p0,
+	}
+}
+
+func (t traceanotherMethodsWithContext) withContext(p0 i0.Context) {
+	ctx, span := trace.ChildSpan(p0)
+	defer span.Close()
+	t.wrapped.withContext(ctx)
+}
+
 type tracemethodsWithContext struct {
 	wrapped methodsWithContext
 }

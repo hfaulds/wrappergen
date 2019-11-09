@@ -28,3 +28,7 @@ type methodsWithContext interface {
 		Foo(string) int
 	})
 }
+
+type anotherMethodsWithContext interface {
+	withContext(context.Context)
+}

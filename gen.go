@@ -29,6 +29,7 @@ func Generate(pkg *Package) string {
 		if shouldSkipInterface(iface) {
 			continue
 		}
+		fmt.Fprint(&b, "\n")
 
 		/*
 			type traceExample struct {
@@ -75,8 +76,8 @@ func Generate(pkg *Package) string {
 			generateWrappedCall(&b, m, len(params), offset)
 			fmt.Fprintf(&b, "}")
 		}
+		fmt.Fprint(&b, "\n")
 	}
-	fmt.Fprint(&b, "\n")
 	return b.String()
 }
 
@@ -160,7 +161,7 @@ func generateImports(b *strings.Builder, importMap map[string]string) {
 	sort.Strings(imports)
 	fmt.Fprintf(b, strings.Join(imports, "\n"))
 	if len(imports) > 0 {
-		fmt.Fprintf(b, "\n\n")
+		fmt.Fprintf(b, "\n")
 	}
 }
 

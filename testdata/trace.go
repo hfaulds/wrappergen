@@ -20,6 +20,25 @@ func (t tracemethodsWithContext) arrayType(p0 i0.Context, p1 [10]int) {
 	t.wrapped.arrayType(ctx, p1)
 }
 
+func (t tracemethodsWithContext) interfaceType(p0 i0.Context, p1 interface {
+	Foo(p0 string) int
+},
+) {
+	ctx, span := trace.ChildSpan(p0)
+	defer span.Close()
+	t.wrapped.interfaceType(ctx, p1)
+}
+
+func (t tracemethodsWithContext) interfaceTypeWithEmbed(p0 i0.Context, p1 interface {
+	Foo(p0 string) int
+	withoutContext()
+},
+) {
+	ctx, span := trace.ChildSpan(p0)
+	defer span.Close()
+	t.wrapped.interfaceTypeWithEmbed(ctx, p1)
+}
+
 func (t tracemethodsWithContext) mapType(p0 i0.Context, p1 map[int]string) {
 	ctx, span := trace.ChildSpan(p0)
 	defer span.Close()
@@ -48,6 +67,12 @@ func (t tracemethodsWithContext) withContext(p0 i0.Context) {
 	ctx, span := trace.ChildSpan(p0)
 	defer span.Close()
 	t.wrapped.withContext(ctx)
+}
+
+func (t tracemethodsWithContext) withContextAsSecondArg(p0 int, p1 i0.Context) {
+	ctx, span := trace.ChildSpan(p1)
+	defer span.Close()
+	t.wrapped.withContextAsSecondArg(p0, ctx)
 }
 
 func (t tracemethodsWithContext) withReturnType(p0 i0.Context) string {

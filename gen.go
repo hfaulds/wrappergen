@@ -45,7 +45,9 @@ func Generate(pkg *Package) string {
 				wrapped p0,
 			}
 		}*/
+		fmt.Fprint(&b, "\n\nfunc ")
 		generateMethodSig(&b, "", fmt.Sprintf("New%sTracer", iface.Name), []string{iface.Name}, []string{iface.Name})
+		fmt.Fprint(&b, " {\n")
 		fmt.Fprintf(&b, "\treturn %s{\n", structName)
 		fmt.Fprintf(&b, "\t\twrapped: p0,\n")
 		fmt.Fprintf(&b, "\t}\n")
@@ -61,7 +63,9 @@ func Generate(pkg *Package) string {
 		for _, m := range iface.Methods {
 			params := resolveParams(importMap, m.Params)
 			returns := resolveParams(importMap, m.Returns)
+			fmt.Fprint(&b, "\n\nfunc ")
 			generateMethodSig(&b, structName, m.Name, params, returns)
+			fmt.Fprint(&b, " {\n")
 			// only add tracing if there a context
 			offset, ok := getFirstContextParamOffset(m)
 			if ok {
@@ -77,7 +81,6 @@ func Generate(pkg *Package) string {
 }
 
 func generateMethodSig(b *strings.Builder, implementor, methodName string, params, returns []string) {
-	fmt.Fprint(b, "\n\nfunc ")
 	if implementor != "" {
 		fmt.Fprintf(b, "(t %s) ", implementor)
 	}
@@ -104,23 +107,28 @@ func generateMethodSig(b *strings.Builder, implementor, methodName string, param
 	if len(returns) > 1 {
 		fmt.Fprint(b, ")")
 	}
-	fmt.Fprint(b, " {\n")
 }
 
 func buildImportMap(interfaces []Interface) map[string]string {
 	importMap := map[string]string{}
 	for _, i := range interfaces {
-		for _, m := range i.Methods {
-			for _, p := range m.Params {
-				for _, pkg := range resolvePackages(p) {
-					if _, ok := importMap[pkg]; !ok {
-						importMap[pkg] = fmt.Sprintf("i%d", len(importMap))
-					}
-				}
+		for _, pkg := range resolveMethodPackages(i.Methods) {
+			if _, ok := importMap[pkg]; !ok {
+				importMap[pkg] = fmt.Sprintf("i%d", len(importMap))
 			}
 		}
 	}
 	return importMap
+}
+
+func resolveMethodPackages(methods []method) []string {
+	var pkgs []string
+	for _, m := range methods {
+		for _, p := range m.Params {
+			pkgs = append(pkgs, resolvePackages(p)...)
+		}
+	}
+	return pkgs
 }
 
 func resolvePackages(p param) []string {
@@ -135,6 +143,8 @@ func resolvePackages(p param) []string {
 		return resolvePackages(tp.typ)
 	case mapParam:
 		return append(resolvePackages(tp.key), resolvePackages(tp.elem)...)
+	case interfaceParam:
+		return resolveMethodPackages(tp.methods)
 	default:
 		return []string{}
 	}
@@ -202,7 +212,16 @@ func resolveParam(importMap map[string]string, p param) string {
 	case mapParam:
 		return fmt.Sprintf("map[%s]%s", resolveParam(importMap, tp.key), resolveParam(importMap, tp.elem))
 	case interfaceParam:
-		return ""
+		var b strings.Builder
+		fmt.Fprint(&b, "interface {")
+		for _, m := range tp.methods {
+			params := resolveParams(importMap, m.Params)
+			returns := resolveParams(importMap, m.Returns)
+			fmt.Fprint(&b, "\n\t")
+			generateMethodSig(&b, "", m.Name, params, returns)
+		}
+		fmt.Fprint(&b, "\n},\n")
+		return b.String()
 	default:
 		return "<unsupported>"
 	}

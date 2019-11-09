@@ -96,6 +96,8 @@ func getParam(typ types.Type) param {
 		return pointerParam{typ: getParam(t.Elem())}
 	case *types.Map:
 		return mapParam{key: getParam(t.Key()), elem: getParam(t.Elem())}
+	case *types.Interface:
+		return interfaceParam{methods: getMethods(t)}
 	}
 	return unsupportedParam{}
 }

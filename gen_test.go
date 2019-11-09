@@ -10,6 +10,10 @@ import (
 	"github.com/hfaulds/tracer/testdata"
 )
 
+/* TODO
+test package resolving for each type
+*/
+
 func TestParseAndGen(t *testing.T) {
 	pkg, err := ParseDir("./testdata")
 	require.NoError(t, err)

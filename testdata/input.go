@@ -21,14 +21,13 @@ type methodsWithContext interface {
 	withoutContext()
 	withContext(context.Context)
 	withContextAsSecondArg(int, context.Context)
-	namedAndBasicTypes(context.Context, int, bytes.Buffer)
+	namedAndBasicTypes(context.Context, int, bytes.Buffer, error)
 	internalTypeParam(context.Context, internalType)
 	arrayType(context.Context, [10]int)
 	sliceType(context.Context, []int)
 	pointerType(context.Context, *int)
 	mapType(context.Context, map[int]string)
-	returnBasicType(context.Context) string
-	returnNamedType(context.Context) io.Reader
+	returnNamedAndBasicTypes(context.Context) (string, io.Reader, error)
 	returnInternalType(context.Context) internalType
 	interfaceType(context.Context, interface{ Foo(string) int })
 	interfaceTypeWithEmbed(context.Context, interface {

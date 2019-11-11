@@ -71,10 +71,10 @@ func (t tracemethodsWithContext) mapType(p0 i0.Context, p1 map[int]string) {
 	t.wrapped.mapType(ctx, p1)
 }
 
-func (t tracemethodsWithContext) namedAndBasicTypes(p0 i0.Context, p1 int, p2 i1.Buffer) {
+func (t tracemethodsWithContext) namedAndBasicTypes(p0 i0.Context, p1 int, p2 i1.Buffer, p3 error) {
 	ctx, span := t.childSpan(p0)
 	defer span.Close()
-	t.wrapped.namedAndBasicTypes(ctx, p1, p2)
+	t.wrapped.namedAndBasicTypes(ctx, p1, p2, p3)
 }
 
 func (t tracemethodsWithContext) pointerType(p0 i0.Context, p1 *int) {
@@ -83,22 +83,16 @@ func (t tracemethodsWithContext) pointerType(p0 i0.Context, p1 *int) {
 	t.wrapped.pointerType(ctx, p1)
 }
 
-func (t tracemethodsWithContext) returnBasicType(p0 i0.Context) string {
-	ctx, span := t.childSpan(p0)
-	defer span.Close()
-	return t.wrapped.returnBasicType(ctx)
-}
-
 func (t tracemethodsWithContext) returnInternalType(p0 i0.Context) internalType {
 	ctx, span := t.childSpan(p0)
 	defer span.Close()
 	return t.wrapped.returnInternalType(ctx)
 }
 
-func (t tracemethodsWithContext) returnNamedType(p0 i0.Context) i2.Reader {
+func (t tracemethodsWithContext) returnNamedAndBasicTypes(p0 i0.Context) (string, i2.Reader, error) {
 	ctx, span := t.childSpan(p0)
 	defer span.Close()
-	return t.wrapped.returnNamedType(ctx)
+	return t.wrapped.returnNamedAndBasicTypes(ctx)
 }
 
 func (t tracemethodsWithContext) sliceType(p0 i0.Context, p1 []int) {

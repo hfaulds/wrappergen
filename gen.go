@@ -144,6 +144,9 @@ func resolveMethodPackages(methods []method) []string {
 func resolvePackages(p param) []string {
 	switch tp := p.(type) {
 	case namedParam:
+		if tp.pkg == "" {
+			return []string{}
+		}
 		return []string{tp.pkg}
 	case arrayParam:
 		return resolvePackages(tp.typ)

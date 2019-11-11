@@ -2,6 +2,7 @@ package testdata
 
 import i0 "context"
 import i1 "bytes"
+import i2 "io"
 import trace "github.com/hfaulds/tracer/trace"
 
 type traceanotherMethodsWithContext struct {
@@ -55,6 +56,12 @@ func (t tracemethodsWithContext) interfaceTypeWithEmbed(p0 i0.Context, p1 interf
 	t.wrapped.interfaceTypeWithEmbed(ctx, p1)
 }
 
+func (t tracemethodsWithContext) internalTypeParam(p0 i0.Context, p1 internalType) {
+	ctx, span := trace.ChildSpan(p0)
+	defer span.Close()
+	t.wrapped.internalTypeParam(ctx, p1)
+}
+
 func (t tracemethodsWithContext) mapType(p0 i0.Context, p1 map[int]string) {
 	ctx, span := trace.ChildSpan(p0)
 	defer span.Close()
@@ -73,6 +80,24 @@ func (t tracemethodsWithContext) pointerType(p0 i0.Context, p1 *int) {
 	t.wrapped.pointerType(ctx, p1)
 }
 
+func (t tracemethodsWithContext) returnBasicType(p0 i0.Context) string {
+	ctx, span := trace.ChildSpan(p0)
+	defer span.Close()
+	return t.wrapped.returnBasicType(ctx)
+}
+
+func (t tracemethodsWithContext) returnInternalType(p0 i0.Context) internalType {
+	ctx, span := trace.ChildSpan(p0)
+	defer span.Close()
+	return t.wrapped.returnInternalType(ctx)
+}
+
+func (t tracemethodsWithContext) returnNamedType(p0 i0.Context) i2.Reader {
+	ctx, span := trace.ChildSpan(p0)
+	defer span.Close()
+	return t.wrapped.returnNamedType(ctx)
+}
+
 func (t tracemethodsWithContext) sliceType(p0 i0.Context, p1 []int) {
 	ctx, span := trace.ChildSpan(p0)
 	defer span.Close()
@@ -89,18 +114,6 @@ func (t tracemethodsWithContext) withContextAsSecondArg(p0 int, p1 i0.Context) {
 	ctx, span := trace.ChildSpan(p1)
 	defer span.Close()
 	t.wrapped.withContextAsSecondArg(p0, ctx)
-}
-
-func (t tracemethodsWithContext) withInternalReturnType(p0 i0.Context) returnType {
-	ctx, span := trace.ChildSpan(p0)
-	defer span.Close()
-	return t.wrapped.withInternalReturnType(ctx)
-}
-
-func (t tracemethodsWithContext) withReturnType(p0 i0.Context) string {
-	ctx, span := trace.ChildSpan(p0)
-	defer span.Close()
-	return t.wrapped.withReturnType(ctx)
 }
 
 func (t tracemethodsWithContext) withoutContext() {

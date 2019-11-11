@@ -2,6 +2,7 @@ package main
 
 type Package struct {
 	Name       string
+	PkgPath    string
 	Interfaces []Interface
 }
 

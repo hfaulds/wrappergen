@@ -20,7 +20,7 @@ func Generate(pkg *Package) string {
 			i1 "some/dependency"
 		)
 	*/
-	importMap := buildImportMap(pkg.Interfaces)
+	importMap := buildImportMap(pkg)
 	generateImports(&b, importMap)
 
 	for _, iface := range pkg.Interfaces {
@@ -109,12 +109,15 @@ func generateMethodSig(b *strings.Builder, implementor, methodName string, param
 	}
 }
 
-func buildImportMap(interfaces []Interface) map[string]string {
+func buildImportMap(pkg *Package) map[string]string {
 	importMap := map[string]string{}
-	for _, i := range interfaces {
-		for _, pkg := range resolveMethodPackages(i.Methods) {
-			if _, ok := importMap[pkg]; !ok {
-				importMap[pkg] = fmt.Sprintf("i%d", len(importMap))
+	for _, i := range pkg.Interfaces {
+		for _, p := range resolveMethodPackages(i.Methods) {
+			if p == pkg.PkgPath {
+				continue
+			}
+			if _, ok := importMap[p]; !ok {
+				importMap[p] = fmt.Sprintf("i%d", len(importMap))
 			}
 		}
 	}
@@ -125,6 +128,9 @@ func resolveMethodPackages(methods []method) []string {
 	var pkgs []string
 	for _, m := range methods {
 		for _, p := range m.Params {
+			pkgs = append(pkgs, resolvePackages(p)...)
+		}
+		for _, p := range m.Returns {
 			pkgs = append(pkgs, resolvePackages(p)...)
 		}
 	}

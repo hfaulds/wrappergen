@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"go/types"
 
 	"golang.org/x/tools/go/packages"
@@ -15,7 +16,8 @@ func ParseDir(dir string) (*Package, error) {
 	scope := p.Types.Scope()
 	names := scope.Names()
 	pkg := &Package{
-		Name: p.Name,
+		Name:    p.Name,
+		PkgPath: p.PkgPath,
 	}
 	for _, name := range names {
 		obj := scope.Lookup(name)
@@ -82,6 +84,10 @@ func getParam(typ types.Type) param {
 		return basicParam{typ: t.Name()}
 	case *types.Named:
 		if obj := t.Obj(); obj != nil {
+			if obj.Name() == "returnType" {
+				fmt.Println(obj.Name())
+			}
+
 			var pkg string
 			if p := obj.Pkg(); p != nil {
 				pkg = p.Path()

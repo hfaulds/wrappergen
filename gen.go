@@ -23,6 +23,8 @@ func Generate(pkg *Package) string {
 	importMap := buildImportMap(pkg)
 	generateImports(&b, importMap)
 
+	childSpanType := fmt.Sprintf("func(%s.Context) (%s.Context, interface{ Close() })", importMap["context"], importMap["context"])
+
 	for _, iface := range pkg.Interfaces {
 		// Skip interfaces where no methods have context.Context as an argument
 		if shouldSkipInterface(iface) {
@@ -37,7 +39,8 @@ func Generate(pkg *Package) string {
 		*/
 		structName := fmt.Sprintf("trace%s", iface.Name)
 		fmt.Fprintf(&b, "type %s struct {\n", structName)
-		fmt.Fprintf(&b, "\twrapped %s\n", iface.Name)
+		fmt.Fprintf(&b, "\twrapped   %s\n", iface.Name)
+		fmt.Fprintf(&b, "\tchildSpan %s\n", childSpanType)
 		fmt.Fprintf(&b, "}")
 
 		/* func NewExampleTracer(p0 Example) Example {
@@ -46,16 +49,17 @@ func Generate(pkg *Package) string {
 			}
 		}*/
 		fmt.Fprint(&b, "\n\nfunc ")
-		generateMethodSig(&b, "", fmt.Sprintf("New%sTracer", iface.Name), []string{iface.Name}, []string{iface.Name})
+		generateMethodSig(&b, "", fmt.Sprintf("New%sTracer", iface.Name), []string{iface.Name, childSpanType}, []string{iface.Name})
 		fmt.Fprint(&b, " {\n")
 		fmt.Fprintf(&b, "\treturn %s{\n", structName)
-		fmt.Fprintf(&b, "\t\twrapped: p0,\n")
+		fmt.Fprintf(&b, "\t\twrapped:   p0,\n")
+		fmt.Fprintf(&b, "\t\tchildSpan: p1,\n")
 		fmt.Fprintf(&b, "\t}\n")
 		fmt.Fprintf(&b, "}")
 
 		/*
 			func (t traceExample) Foo(p0 context.Context, p1) i1.example {
-				ctx, span := trace.ChildSpan(p0)
+				ctx, span := t.childSpan(p0)
 				defer span.Close()
 				return t.wrapped.Foo(p0,p1)
 			}
@@ -69,7 +73,7 @@ func Generate(pkg *Package) string {
 			// only add tracing if there a context
 			offset, ok := getFirstContextParamOffset(m)
 			if ok {
-				fmt.Fprintf(&b, "\tctx, span := trace.ChildSpan(p%d)\n", offset)
+				fmt.Fprintf(&b, "\tctx, span := t.childSpan(p%d)\n", offset)
 				fmt.Fprint(&b, "\tdefer span.Close()\n")
 			}
 			generateWrappedCall(&b, m, len(params), offset)
@@ -157,9 +161,7 @@ func resolvePackages(p param) []string {
 }
 
 func generateImports(b *strings.Builder, importMap map[string]string) {
-	imports := []string{
-		"import trace \"github.com/hfaulds/tracer/trace\"",
-	}
+	var imports []string
 	for imp, alias := range importMap {
 		imports = append(imports, fmt.Sprintf("import %s \"%s\"", alias, imp))
 	}

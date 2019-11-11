@@ -23,5 +23,5 @@ func TestParseAndGen(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, string(expected), generated)
 
-	assert.NotNil(t, testdata.NewmethodsWithContextTracer(nil))
+	assert.NotNil(t, testdata.NewmethodsWithContextTracer(nil, nil))
 }

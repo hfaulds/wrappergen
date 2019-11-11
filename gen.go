@@ -28,7 +28,7 @@ func Generate(pkg *Package) string {
 	importMap := buildImportMap(pkg)
 	generateImports(&b, importMap)
 
-	childSpanType := fmt.Sprintf("func(%s.Context) (%s.Context, interface{ Close() })", importMap["context"], importMap["context"])
+	childSpanType := fmt.Sprintf("func(%s.Context) (%s.Context, interface{ Finish() })", importMap["context"], importMap["context"])
 
 	for _, iface := range pkg.Interfaces {
 		// Skip interfaces where no methods have context.Context as an argument
@@ -65,7 +65,7 @@ func Generate(pkg *Package) string {
 		/*
 			func (t traceExample) Foo(p0 context.Context, p1) i1.example {
 				ctx, span := t.childSpan(p0)
-				defer span.Close()
+				defer span.Finish()
 				return t.wrapped.Foo(p0,p1)
 			}
 		*/
@@ -79,7 +79,7 @@ func Generate(pkg *Package) string {
 			offset, ok := getFirstContextParamOffset(m)
 			if ok {
 				fmt.Fprintf(&b, "\tctx, span := t.childSpan(p%d)\n", offset)
-				fmt.Fprint(&b, "\tdefer span.Close()\n")
+				fmt.Fprint(&b, "\tdefer span.Finish()\n")
 			}
 			generateWrappedCall(&b, m, len(params), offset)
 			fmt.Fprintf(&b, "}")

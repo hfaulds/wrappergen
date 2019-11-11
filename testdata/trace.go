@@ -9,7 +9,7 @@ type traceanotherMethodsWithContext struct {
 	childSpan func(i0.Context) (i0.Context, interface{ Close() })
 }
 
-func NewanotherMethodsWithContextTracer(p0 anotherMethodsWithContext, p1 func(i0.Context) (i0.Context, interface{ Close() })) anotherMethodsWithContext {
+func NewAnotherMethodsWithContextTracer(p0 anotherMethodsWithContext, p1 func(i0.Context) (i0.Context, interface{ Close() })) anotherMethodsWithContext {
 	return traceanotherMethodsWithContext{
 		wrapped:   p0,
 		childSpan: p1,
@@ -27,7 +27,7 @@ type tracemethodsWithContext struct {
 	childSpan func(i0.Context) (i0.Context, interface{ Close() })
 }
 
-func NewmethodsWithContextTracer(p0 methodsWithContext, p1 func(i0.Context) (i0.Context, interface{ Close() })) methodsWithContext {
+func NewMethodsWithContextTracer(p0 methodsWithContext, p1 func(i0.Context) (i0.Context, interface{ Close() })) methodsWithContext {
 	return tracemethodsWithContext{
 		wrapped:   p0,
 		childSpan: p1,

@@ -49,7 +49,7 @@ func Generate(pkg *Package) string {
 			}
 		}*/
 		fmt.Fprint(&b, "\n\nfunc ")
-		generateMethodSig(&b, "", fmt.Sprintf("New%sTracer", iface.Name), []string{iface.Name, childSpanType}, []string{iface.Name})
+		generateMethodSig(&b, "", fmt.Sprintf("New%sTracer", strings.Title(iface.Name)), []string{iface.Name, childSpanType}, []string{iface.Name})
 		fmt.Fprint(&b, " {\n")
 		fmt.Fprintf(&b, "\treturn %s{\n", structName)
 		fmt.Fprintf(&b, "\t\twrapped:   p0,\n")

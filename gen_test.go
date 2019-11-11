@@ -18,10 +18,10 @@ func TestParseAndGen(t *testing.T) {
 	pkg, err := ParseDir("./testdata")
 	require.NoError(t, err)
 	t.Log(pkg)
-	generated := Generate(pkg)
+	tracePkg := "github.com/hfaulds/tracer/testdata/trace"
+	generated := Generate(pkg, tracePkg)
 	expected, err := ioutil.ReadFile("./testdata/trace.go")
 	require.NoError(t, err)
 	assert.Equal(t, string(expected), generated)
-
-	assert.NotNil(t, testdata.NewMethodsWithContextTracer(nil, nil))
+	assert.NotNil(t, testdata.NewMethodsWithContextTracer(nil))
 }

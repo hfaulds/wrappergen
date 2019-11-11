@@ -2,59 +2,51 @@
 
 package testdata
 
+import trace "github.com/hfaulds/tracer/testdata/trace"
 import i0 "context"
 import i1 "bytes"
 import i2 "io"
 
-type spanType = interface {
-	Finish()
-	WithError(error) error
-}
-
 type traceanotherMethodsWithContext struct {
-	wrapped   anotherMethodsWithContext
-	childSpan func(i0.Context, string) (i0.Context, spanType)
+	wrapped anotherMethodsWithContext
 }
 
-func NewAnotherMethodsWithContextTracer(p0 anotherMethodsWithContext, p1 func(i0.Context, string) (i0.Context, spanType)) anotherMethodsWithContext {
+func NewAnotherMethodsWithContextTracer(p0 anotherMethodsWithContext) anotherMethodsWithContext {
 	return traceanotherMethodsWithContext{
-		wrapped:   p0,
-		childSpan: p1,
+		wrapped: p0,
 	}
 }
 
 func (t traceanotherMethodsWithContext) withContext(p0 i0.Context) {
-	ctx, span := t.childSpan(p0, "withContext")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("withContext"))
 	defer span.Finish()
 	t.wrapped.withContext(ctx)
 }
 
 type tracemethodsWithContext struct {
-	wrapped   methodsWithContext
-	childSpan func(i0.Context, string) (i0.Context, spanType)
+	wrapped methodsWithContext
 }
 
-func NewMethodsWithContextTracer(p0 methodsWithContext, p1 func(i0.Context, string) (i0.Context, spanType)) methodsWithContext {
+func NewMethodsWithContextTracer(p0 methodsWithContext) methodsWithContext {
 	return tracemethodsWithContext{
-		wrapped:   p0,
-		childSpan: p1,
+		wrapped: p0,
 	}
 }
 
 func (t tracemethodsWithContext) arrayType(p0 i0.Context, p1 [10]int) {
-	ctx, span := t.childSpan(p0, "arrayType")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("arrayType"))
 	defer span.Finish()
 	t.wrapped.arrayType(ctx, p1)
 }
 
 func (t tracemethodsWithContext) interfaceType(p0 i0.Context, p1 interface{ Foo(p0 string) int }) {
-	ctx, span := t.childSpan(p0, "interfaceType")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("interfaceType"))
 	defer span.Finish()
 	t.wrapped.interfaceType(ctx, p1)
 }
 
 func (t tracemethodsWithContext) interfaceTypeEmty(p0 i0.Context, p1 interface{}) {
-	ctx, span := t.childSpan(p0, "interfaceTypeEmty")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("interfaceTypeEmty"))
 	defer span.Finish()
 	t.wrapped.interfaceTypeEmty(ctx, p1)
 }
@@ -64,69 +56,69 @@ func (t tracemethodsWithContext) interfaceTypeWithEmbed(p0 i0.Context, p1 interf
 	withoutContext()
 },
 ) {
-	ctx, span := t.childSpan(p0, "interfaceTypeWithEmbed")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("interfaceTypeWithEmbed"))
 	defer span.Finish()
 	t.wrapped.interfaceTypeWithEmbed(ctx, p1)
 }
 
 func (t tracemethodsWithContext) internalTypeParam(p0 i0.Context, p1 internalType) {
-	ctx, span := t.childSpan(p0, "internalTypeParam")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("internalTypeParam"))
 	defer span.Finish()
 	t.wrapped.internalTypeParam(ctx, p1)
 }
 
 func (t tracemethodsWithContext) mapType(p0 i0.Context, p1 map[int]string) {
-	ctx, span := t.childSpan(p0, "mapType")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("mapType"))
 	defer span.Finish()
 	t.wrapped.mapType(ctx, p1)
 }
 
 func (t tracemethodsWithContext) namedAndBasicTypes(p0 i0.Context, p1 int, p2 i1.Buffer, p3 error) {
-	ctx, span := t.childSpan(p0, "namedAndBasicTypes")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("namedAndBasicTypes"))
 	defer span.Finish()
 	t.wrapped.namedAndBasicTypes(ctx, p1, p2, p3)
 }
 
 func (t tracemethodsWithContext) pointerType(p0 i0.Context, p1 *int) {
-	ctx, span := t.childSpan(p0, "pointerType")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("pointerType"))
 	defer span.Finish()
 	t.wrapped.pointerType(ctx, p1)
 }
 
 func (t tracemethodsWithContext) returnInternalType(p0 i0.Context) internalType {
-	ctx, span := t.childSpan(p0, "returnInternalType")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("returnInternalType"))
 	defer span.Finish()
 	return t.wrapped.returnInternalType(ctx)
 }
 
 func (t tracemethodsWithContext) returnMultipleErrors(p0 i0.Context) (error, error) {
-	ctx, span := t.childSpan(p0, "returnMultipleErrors")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("returnMultipleErrors"))
 	defer span.Finish()
 	r0, r1 := t.wrapped.returnMultipleErrors(ctx)
 	return r0, span.WithError(r1)
 }
 
 func (t tracemethodsWithContext) returnNamedAndBasicTypes(p0 i0.Context) (string, i2.Reader, error) {
-	ctx, span := t.childSpan(p0, "returnNamedAndBasicTypes")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("returnNamedAndBasicTypes"))
 	defer span.Finish()
 	r0, r1, r2 := t.wrapped.returnNamedAndBasicTypes(ctx)
 	return r0, r1, span.WithError(r2)
 }
 
 func (t tracemethodsWithContext) sliceType(p0 i0.Context, p1 []int) {
-	ctx, span := t.childSpan(p0, "sliceType")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("sliceType"))
 	defer span.Finish()
 	t.wrapped.sliceType(ctx, p1)
 }
 
 func (t tracemethodsWithContext) withContext(p0 i0.Context) {
-	ctx, span := t.childSpan(p0, "withContext")
+	ctx, span := trace.ChildSpan(p0, trace.OpName("withContext"))
 	defer span.Finish()
 	t.wrapped.withContext(ctx)
 }
 
 func (t tracemethodsWithContext) withContextAsSecondArg(p0 int, p1 i0.Context) {
-	ctx, span := t.childSpan(p1, "withContextAsSecondArg")
+	ctx, span := trace.ChildSpan(p1, trace.OpName("withContextAsSecondArg"))
 	defer span.Finish()
 	t.wrapped.withContextAsSecondArg(p0, ctx)
 }

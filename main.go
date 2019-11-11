@@ -12,5 +12,5 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(Generate(pkg))
+	fmt.Println(Generate(pkg, args[1]))
 }

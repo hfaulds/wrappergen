@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func Generate(pkg *Package) string {
+func Generate(pkg *Package, tracePkg string) string {
 	// If there are no interfaces with methods which have context.Context as an
 	// argument then there is nothing to generate.
 	if shouldSkipPackage(pkg) {
@@ -26,20 +26,14 @@ func Generate(pkg *Package) string {
 	fmt.Fprintf(&b, "package %s\n\n", pkg.Name)
 
 	/*
-		import (
-			i0 "context"
-			i1 "some/dependency"
-		)
+		import "github.com/hfaulds/tracer/testdata/trace"
+		import i0 "context"
+		import i1 "bytes"
+		import i2 "io"
 	*/
+	fmt.Fprintf(&b, "import trace \"%s\"\n", tracePkg)
 	importMap := buildImportMap(pkg)
 	generateImports(&b, importMap)
-
-	/*
-		type spanType = interface{ Finish() }
-	*/
-	fmt.Fprint(&b, "\ntype spanType = interface {\n\tFinish()\n\tWithError(error) error\n}\n")
-
-	childSpanType := fmt.Sprintf("func(%s.Context, string) (%s.Context, spanType)", importMap["context"], importMap["context"])
 
 	for _, iface := range pkg.Interfaces {
 		// Skip interfaces where no methods have context.Context as an argument
@@ -55,8 +49,7 @@ func Generate(pkg *Package) string {
 		*/
 		structName := fmt.Sprintf("trace%s", iface.Name)
 		fmt.Fprintf(&b, "type %s struct {\n", structName)
-		fmt.Fprintf(&b, "\twrapped   %s\n", iface.Name)
-		fmt.Fprintf(&b, "\tchildSpan %s\n", childSpanType)
+		fmt.Fprintf(&b, "\twrapped %s\n", iface.Name)
 		fmt.Fprintf(&b, "}")
 
 		/* func NewExampleTracer(p0 Example) Example {
@@ -65,11 +58,10 @@ func Generate(pkg *Package) string {
 			}
 		}*/
 		fmt.Fprint(&b, "\n\nfunc ")
-		generateMethodSig(&b, "", fmt.Sprintf("New%sTracer", strings.Title(iface.Name)), []string{iface.Name, childSpanType}, []string{iface.Name})
+		generateMethodSig(&b, "", fmt.Sprintf("New%sTracer", strings.Title(iface.Name)), []string{iface.Name}, []string{iface.Name})
 		fmt.Fprint(&b, " {\n")
 		fmt.Fprintf(&b, "\treturn %s{\n", structName)
-		fmt.Fprintf(&b, "\t\twrapped:   p0,\n")
-		fmt.Fprintf(&b, "\t\tchildSpan: p1,\n")
+		fmt.Fprintf(&b, "\t\twrapped: p0,\n")
 		fmt.Fprintf(&b, "\t}\n")
 		fmt.Fprintf(&b, "}")
 
@@ -89,7 +81,7 @@ func Generate(pkg *Package) string {
 			// only add tracing if there a context
 			offset, ok := getFirstContextParamOffset(m)
 			if ok {
-				fmt.Fprintf(&b, "\tctx, span := t.childSpan(p%d, \"%s\")\n", offset, m.Name)
+				fmt.Fprintf(&b, "\tctx, span := trace.ChildSpan(p%d, trace.OpName(\"%s\"))\n", offset, m.Name)
 				fmt.Fprint(&b, "\tdefer span.Finish()\n")
 			}
 			generateWrappedCall(&b, m, len(params), offset)

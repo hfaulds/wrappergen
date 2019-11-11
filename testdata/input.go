@@ -29,6 +29,7 @@ type methodsWithContext interface {
 	mapType(context.Context, map[int]string)
 	returnNamedAndBasicTypes(context.Context) (string, io.Reader, error)
 	returnInternalType(context.Context) internalType
+	returnMultipleErrors(context.Context) (error, error)
 	interfaceType(context.Context, interface{ Foo(string) int })
 	interfaceTypeWithEmbed(context.Context, interface {
 		noMethodsWithContext

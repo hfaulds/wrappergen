@@ -28,7 +28,12 @@ func Generate(pkg *Package) string {
 	importMap := buildImportMap(pkg)
 	generateImports(&b, importMap)
 
-	childSpanType := fmt.Sprintf("func(%s.Context) (%s.Context, interface{ Finish() })", importMap["context"], importMap["context"])
+	/*
+		type spanType = interface{ Finish() }
+	*/
+	fmt.Fprint(&b, "\ntype spanType = interface {\n\tFinish()\n\tWithError(error) error\n}\n")
+
+	childSpanType := fmt.Sprintf("func(%s.Context) (%s.Context, spanType)", importMap["context"], importMap["context"])
 
 	for _, iface := range pkg.Interfaces {
 		// Skip interfaces where no methods have context.Context as an argument
@@ -247,14 +252,26 @@ func resolveParam(importMap map[string]string, p param) string {
 	}
 }
 
-func generateWrappedCall(b *strings.Builder, m method, numParams, offset int) {
+func generateWrappedCall(b *strings.Builder, m method, numParams, contextOffset int) {
 	fmt.Fprint(b, "\t")
-	if len(m.Returns) > 0 {
-		fmt.Fprint(b, "return ")
+	numReturns := len(m.Returns)
+	errorOffset, returnsError := getLastErrorReturnOffset(m)
+	if numReturns > 0 {
+		if returnsError {
+			for i := 0; i < numReturns; i++ {
+				fmt.Fprintf(b, "r%d", i)
+				if i != numReturns-1 {
+					fmt.Fprint(b, ", ")
+				}
+			}
+			fmt.Fprint(b, " := ")
+		} else {
+			fmt.Fprint(b, "return ")
+		}
 	}
 	fmt.Fprintf(b, "t.wrapped.%s(", m.Name)
 	for i := 0; i < numParams; i++ {
-		if i == offset {
+		if i == contextOffset {
 			fmt.Fprint(b, "ctx")
 		} else {
 			fmt.Fprintf(b, "p%d", i)
@@ -264,4 +281,32 @@ func generateWrappedCall(b *strings.Builder, m method, numParams, offset int) {
 		}
 	}
 	fmt.Fprint(b, ")\n")
+	if returnsError {
+		fmt.Fprint(b, "\treturn ")
+		for i := 0; i < numReturns; i++ {
+			if i == errorOffset {
+				fmt.Fprintf(b, "span.WithError(r%d)", i)
+			} else {
+				fmt.Fprintf(b, "r%d", i)
+			}
+			if i != numReturns-1 {
+				fmt.Fprint(b, ", ")
+			}
+		}
+		fmt.Fprint(b, "\n")
+	}
+}
+
+var errorNamedParam = namedParam{pkg: "", typ: "error"}
+
+func getLastErrorReturnOffset(m method) (int, bool) {
+	for i := len(m.Returns) - 1; i >= 0; i-- {
+		p := m.Returns[i]
+		if np, ok := p.(namedParam); ok {
+			if np == errorNamedParam {
+				return i, true
+			}
+		}
+	}
+	return -1, false
 }

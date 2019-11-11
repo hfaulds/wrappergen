@@ -6,12 +6,17 @@ import i0 "context"
 import i1 "bytes"
 import i2 "io"
 
-type traceanotherMethodsWithContext struct {
-	wrapped   anotherMethodsWithContext
-	childSpan func(i0.Context) (i0.Context, interface{ Finish() })
+type spanType = interface {
+	Finish()
+	WithError(error) error
 }
 
-func NewAnotherMethodsWithContextTracer(p0 anotherMethodsWithContext, p1 func(i0.Context) (i0.Context, interface{ Finish() })) anotherMethodsWithContext {
+type traceanotherMethodsWithContext struct {
+	wrapped   anotherMethodsWithContext
+	childSpan func(i0.Context) (i0.Context, spanType)
+}
+
+func NewAnotherMethodsWithContextTracer(p0 anotherMethodsWithContext, p1 func(i0.Context) (i0.Context, spanType)) anotherMethodsWithContext {
 	return traceanotherMethodsWithContext{
 		wrapped:   p0,
 		childSpan: p1,
@@ -26,10 +31,10 @@ func (t traceanotherMethodsWithContext) withContext(p0 i0.Context) {
 
 type tracemethodsWithContext struct {
 	wrapped   methodsWithContext
-	childSpan func(i0.Context) (i0.Context, interface{ Finish() })
+	childSpan func(i0.Context) (i0.Context, spanType)
 }
 
-func NewMethodsWithContextTracer(p0 methodsWithContext, p1 func(i0.Context) (i0.Context, interface{ Finish() })) methodsWithContext {
+func NewMethodsWithContextTracer(p0 methodsWithContext, p1 func(i0.Context) (i0.Context, spanType)) methodsWithContext {
 	return tracemethodsWithContext{
 		wrapped:   p0,
 		childSpan: p1,
@@ -91,10 +96,18 @@ func (t tracemethodsWithContext) returnInternalType(p0 i0.Context) internalType 
 	return t.wrapped.returnInternalType(ctx)
 }
 
+func (t tracemethodsWithContext) returnMultipleErrors(p0 i0.Context) (error, error) {
+	ctx, span := t.childSpan(p0)
+	defer span.Finish()
+	r0, r1 := t.wrapped.returnMultipleErrors(ctx)
+	return r0, span.WithError(r1)
+}
+
 func (t tracemethodsWithContext) returnNamedAndBasicTypes(p0 i0.Context) (string, i2.Reader, error) {
 	ctx, span := t.childSpan(p0)
 	defer span.Finish()
-	return t.wrapped.returnNamedAndBasicTypes(ctx)
+	r0, r1, r2 := t.wrapped.returnNamedAndBasicTypes(ctx)
+	return r0, r1, span.WithError(r2)
 }
 
 func (t tracemethodsWithContext) sliceType(p0 i0.Context, p1 []int) {

@@ -33,7 +33,7 @@ func Generate(pkg *Package) string {
 	*/
 	fmt.Fprint(&b, "\ntype spanType = interface {\n\tFinish()\n\tWithError(error) error\n}\n")
 
-	childSpanType := fmt.Sprintf("func(%s.Context) (%s.Context, spanType)", importMap["context"], importMap["context"])
+	childSpanType := fmt.Sprintf("func(%s.Context, string) (%s.Context, spanType)", importMap["context"], importMap["context"])
 
 	for _, iface := range pkg.Interfaces {
 		// Skip interfaces where no methods have context.Context as an argument
@@ -83,7 +83,7 @@ func Generate(pkg *Package) string {
 			// only add tracing if there a context
 			offset, ok := getFirstContextParamOffset(m)
 			if ok {
-				fmt.Fprintf(&b, "\tctx, span := t.childSpan(p%d)\n", offset)
+				fmt.Fprintf(&b, "\tctx, span := t.childSpan(p%d, \"%s\")\n", offset, m.Name)
 				fmt.Fprint(&b, "\tdefer span.Finish()\n")
 			}
 			generateWrappedCall(&b, m, len(params), offset)

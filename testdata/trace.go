@@ -47,13 +47,16 @@ func (t tracemethodsWithContext) arrayType(p0 i0.Context, p1 [10]int) {
 	t.wrapped.arrayType(ctx, p1)
 }
 
-func (t tracemethodsWithContext) interfaceType(p0 i0.Context, p1 interface {
-	Foo(p0 string) int
-},
-) {
+func (t tracemethodsWithContext) interfaceType(p0 i0.Context, p1 interface{ Foo(p0 string) int }) {
 	ctx, span := t.childSpan(p0)
 	defer span.Finish()
 	t.wrapped.interfaceType(ctx, p1)
+}
+
+func (t tracemethodsWithContext) interfaceTypeEmty(p0 i0.Context, p1 interface{}) {
+	ctx, span := t.childSpan(p0)
+	defer span.Finish()
+	t.wrapped.interfaceTypeEmty(ctx, p1)
 }
 
 func (t tracemethodsWithContext) interfaceTypeWithEmbed(p0 i0.Context, p1 interface {

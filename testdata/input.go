@@ -31,6 +31,7 @@ type methodsWithContext interface {
 	returnInternalType(context.Context) internalType
 	returnMultipleErrors(context.Context) (error, error)
 	interfaceType(context.Context, interface{ Foo(string) int })
+	interfaceTypeEmty(context.Context, interface{})
 	interfaceTypeWithEmbed(context.Context, interface {
 		noMethodsWithContext
 		Foo(string) int

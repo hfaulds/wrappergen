@@ -238,14 +238,25 @@ func resolveParam(importMap map[string]string, p param) string {
 		return fmt.Sprintf("map[%s]%s", resolveParam(importMap, tp.key), resolveParam(importMap, tp.elem))
 	case interfaceParam:
 		var b strings.Builder
-		fmt.Fprint(&b, "interface {")
-		for _, m := range tp.methods {
+		if len(tp.methods) == 0 {
+			fmt.Fprint(&b, "interface{}")
+		} else if len(tp.methods) == 1 {
+			fmt.Fprint(&b, "interface{ ")
+			m := tp.methods[0]
 			params := resolveParams(importMap, m.Params)
 			returns := resolveParams(importMap, m.Returns)
-			fmt.Fprint(&b, "\n\t")
 			generateMethodSig(&b, "", m.Name, params, returns)
+			fmt.Fprint(&b, " }")
+		} else {
+			fmt.Fprint(&b, "interface {")
+			for _, m := range tp.methods {
+				fmt.Fprint(&b, "\n\t")
+				params := resolveParams(importMap, m.Params)
+				returns := resolveParams(importMap, m.Returns)
+				generateMethodSig(&b, "", m.Name, params, returns)
+			}
+			fmt.Fprint(&b, "\n},\n")
 		}
-		fmt.Fprint(&b, "\n},\n")
 		return b.String()
 	default:
 		return "<unsupported>"

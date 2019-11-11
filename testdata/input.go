@@ -5,6 +5,8 @@ import (
 	"context"
 )
 
+type returnType string
+
 type noMethods interface {
 }
 
@@ -22,6 +24,7 @@ type methodsWithContext interface {
 	pointerType(context.Context, *int)
 	mapType(context.Context, map[int]string)
 	withReturnType(context.Context) string
+	withInternalReturnType(context.Context) returnType
 	interfaceType(context.Context, interface{ Foo(string) int })
 	interfaceTypeWithEmbed(context.Context, interface {
 		noMethodsWithContext

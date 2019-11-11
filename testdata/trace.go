@@ -91,6 +91,12 @@ func (t tracemethodsWithContext) withContextAsSecondArg(p0 int, p1 i0.Context) {
 	t.wrapped.withContextAsSecondArg(p0, ctx)
 }
 
+func (t tracemethodsWithContext) withInternalReturnType(p0 i0.Context) returnType {
+	ctx, span := trace.ChildSpan(p0)
+	defer span.Close()
+	return t.wrapped.withInternalReturnType(ctx)
+}
+
 func (t tracemethodsWithContext) withReturnType(p0 i0.Context) string {
 	ctx, span := trace.ChildSpan(p0)
 	defer span.Close()

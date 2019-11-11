@@ -17,7 +17,6 @@ func Generate(pkg *Package) string {
 	/*
 		import (
 			i0 "context"
-
 			i1 "some/dependency"
 		)
 	*/
@@ -201,7 +200,11 @@ func resolveParam(importMap map[string]string, p param) string {
 		return tp.typ
 	case namedParam:
 		if tp.pkg != "" {
-			return fmt.Sprintf("%s.%s", importMap[tp.pkg], tp.typ)
+			if alias, ok := importMap[tp.pkg]; ok {
+				return fmt.Sprintf("%s.%s", alias, tp.typ)
+			} else {
+				return tp.typ
+			}
 		}
 		return tp.typ
 	case arrayParam:

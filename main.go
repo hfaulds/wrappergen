@@ -33,8 +33,8 @@ func main() {
 	f := new(flags)
 	flag.StringVar(&f.interfaceName, "interface", "", "Interface to generate wrappers for")
 	flag.StringVar(&f.structName, "struct", "", "Toggles constructor generation and the struct to return. When used in combination with other flags it will construct the generated wrappers.")
-	flag.StringVar(&f.tracingPkg, "tracing", "", "Toggles tracing wrapper generation")
-	flag.StringVar(&f.timingAttr, "timing", "", "Toggles timing wrapper generation")
+	flag.StringVar(&f.tracingPkg, "tracing", "", "Toggles tracing wrapper generation using given package")
+	flag.StringVar(&f.timingAttr, "timing", "", "Toggles timing wrapper generation using struct attribute")
 
 	flag.StringVar(&f.output, "o", "", "Output file; defaults to stdout.")
 

@@ -2,28 +2,11 @@ package gen
 
 import (
 	"fmt"
-	"io"
-	"sort"
-	"strings"
 
 	"github.com/hfaulds/tracer/parse/types"
 )
 
-type ImportMap map[string]string
-
-func GenerateImports(b io.Writer, importMap ImportMap) {
-	var imports []string
-	for imp, alias := range importMap {
-		imports = append(imports, fmt.Sprintf("import %s \"%s\"", alias, imp))
-	}
-	sort.Strings(imports)
-	fmt.Fprintf(b, strings.Join(imports, "\n"))
-	if len(imports) > 0 {
-		fmt.Fprintf(b, "\n")
-	}
-}
-
-func BuildImportMap(pkg *types.Package) ImportMap {
+func buildImportMap(pkg *types.Package) map[string]string {
 	importMap := map[string]string{}
 	for _, i := range pkg.Interfaces {
 		for _, p := range resolveMethodPackages(i.Methods) {

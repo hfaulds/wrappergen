@@ -8,15 +8,15 @@ import (
 	"github.com/hfaulds/tracer/parse/types"
 )
 
-func Gen(b *gen.Builder, iface types.Interface, importMap gen.ImportMap, tracePkg string) string {
-	fmt.Fprintf(b, "import trace \"%s\"\n", tracePkg)
+func Gen(b gen.Builder, iface types.Interface, tracePkg string) string {
+	b.WriteLine("import trace \"%s\"", tracePkg)
 
 	tracingStruct := types.Struct{
 		Name:  fmt.Sprintf("trace%s", iface.Name),
 		Attrs: map[string]types.Param{"wrapped": types.NamedParam{Typ: iface.Name}},
 	}
 
-	b.WriteStruct(importMap, tracingStruct)
+	b.WriteStruct(tracingStruct)
 
 	tracingStructConstructor := types.Method{
 		Name:    fmt.Sprintf("New%sTracer", strings.Title(iface.Name)),
@@ -24,24 +24,24 @@ func Gen(b *gen.Builder, iface types.Interface, importMap gen.ImportMap, tracePk
 		Returns: []types.Param{types.NamedParam{Typ: iface.Name}},
 	}
 
-	b.WriteMethod(importMap, nil, tracingStructConstructor, func(b *gen.Builder) {
-		fmt.Fprintf(b, "return %s{\n", tracingStruct.Name)
-		fmt.Fprintf(b, "wrapped: p0,\n")
-		fmt.Fprintf(b, "}\n")
+	b.WriteMethod(nil, tracingStructConstructor, func(b gen.Builder) {
+		b.WriteLine("return %s{", tracingStruct.Name)
+		b.WriteLine("wrapped: p0,")
+		b.WriteLine("}")
 	})
 
 	for _, m := range iface.Methods {
-		b.WriteMethod(importMap, &tracingStruct, m, func(b *gen.Builder) {
+		b.WriteMethod(&tracingStruct, m, func(b gen.Builder) {
 			// only add tracing if there a context
 			offset, ok := getFirstContextParamOffset(m)
 			if ok {
-				fmt.Fprintf(b, "ctx, span := trace.ChildSpan(p%d, trace.OpName(\"%s\"))\n", offset, m.Name)
-				fmt.Fprint(b, "defer span.Finish()\n")
+				b.WriteLine("ctx, span := trace.ChildSpan(p%d, trace.OpName(\"%s\"))", offset, m.Name)
+				b.WriteLine("defer span.Finish()")
 			}
 			generateWrappedCall(b, m, offset)
 		})
 	}
-	fmt.Fprint(b, "\n")
+	b.WriteLine("")
 
 	return tracingStructConstructor.Name
 }
@@ -68,48 +68,47 @@ func getFirstContextParamOffset(m types.Method) (int, bool) {
 	return -1, false
 }
 
-func generateWrappedCall(b *gen.Builder, m types.Method, contextOffset int) {
-	fmt.Fprint(b, "")
+func generateWrappedCall(b gen.Builder, m types.Method, contextOffset int) {
 	numReturns := len(m.Returns)
 	errorOffset, returnsError := getLastErrorReturnOffset(m)
 	if numReturns > 0 {
 		if returnsError {
 			for i := 0; i < numReturns; i++ {
-				fmt.Fprintf(b, "r%d", i)
+				b.Write("r%d", i)
 				if i != numReturns-1 {
-					fmt.Fprint(b, ", ")
+					b.Write(", ")
 				}
 			}
-			fmt.Fprint(b, " := ")
+			b.Write(" := ")
 		} else {
-			fmt.Fprint(b, "return ")
+			b.Write("return ")
 		}
 	}
-	fmt.Fprintf(b, "t.wrapped.%s(", m.Name)
+	b.Write("t.wrapped.%s(", m.Name)
 	for i := 0; i < len(m.Params); i++ {
 		if i == contextOffset {
-			fmt.Fprint(b, "ctx")
+			b.Write("ctx")
 		} else {
-			fmt.Fprintf(b, "p%d", i)
+			b.Write("p%d", i)
 		}
 		if i != len(m.Params)-1 {
-			fmt.Fprint(b, ", ")
+			b.Write(", ")
 		}
 	}
-	fmt.Fprint(b, ")\n")
+	b.WriteLine(")")
 	if returnsError {
-		fmt.Fprint(b, "return ")
+		b.Write("return ")
 		for i := 0; i < numReturns; i++ {
 			if i == errorOffset {
-				fmt.Fprintf(b, "span.WithError(r%d)", i)
+				b.Write("span.WithError(r%d)", i)
 			} else {
-				fmt.Fprintf(b, "r%d", i)
+				b.Write("r%d", i)
 			}
 			if i != numReturns-1 {
-				fmt.Fprint(b, ", ")
+				b.Write(", ")
 			}
 		}
-		fmt.Fprint(b, "\n")
+		b.WriteLine("")
 	}
 }
 

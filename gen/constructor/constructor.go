@@ -8,32 +8,32 @@ import (
 	"github.com/hfaulds/tracer/parse/types"
 )
 
-func Gen(b *gen.Builder, importMap gen.ImportMap, iface types.Interface, strct types.Struct, wrappers []string) {
+func Gen(b gen.Builder, iface types.Interface, strct types.Struct, wrappers []string) {
 	attrTypes := make([]types.Param, 0, len(strct.Attrs))
 	for _, typ := range strct.Attrs {
 		attrTypes = append(attrTypes, typ)
 	}
 
-	b.WriteMethod(importMap, nil, types.Method{
+	b.WriteMethod(nil, types.Method{
 		Name:    fmt.Sprintf("New%s", strings.Title(iface.Name)),
 		Params:  attrTypes,
 		Returns: []types.Param{types.NamedParam{Typ: iface.Name}},
-	}, func(b *gen.Builder) {
-		fmt.Fprintf(b, "return ")
+	}, func(b gen.Builder) {
+		b.Write("return ")
 		for _, wrapper := range wrappers {
-			fmt.Fprintf(b, "%s(", wrapper)
+			b.Write("%s(", wrapper)
 		}
 
-		fmt.Fprintf(b, "%s{\n", strct.Name)
+		b.WriteLine("%s{", strct.Name)
 		i := 0
 		for name, _ := range strct.Attrs {
-			fmt.Fprintf(b, "%s: a%d,\n", name, i)
+			b.Write("%s: a%d,\n", name, i)
 			i++
 		}
-		fmt.Fprint(b, "}")
+		b.Write("}")
 
 		for i := 0; i < len(wrappers); i++ {
-			fmt.Fprint(b, ")")
+			b.Write(")")
 		}
 	})
 }

@@ -8,13 +8,13 @@ import (
 	"github.com/hfaulds/tracer/parse/types"
 )
 
-func Gen(b *gen.Builder, iface types.Interface, importMap gen.ImportMap, timingAttr string) string {
+func Gen(b gen.Builder, iface types.Interface, timingAttr string) string {
 	timingStruct := types.Struct{
 		Name:  fmt.Sprintf("time%s", iface.Name),
 		Attrs: map[string]types.Param{"wrapped": types.NamedParam{Typ: iface.Name}},
 	}
 
-	b.WriteStruct(importMap, timingStruct)
+	b.WriteStruct(timingStruct)
 
 	timingStructConstructor := types.Method{
 		Name:    fmt.Sprintf("New%sTimer", strings.Title(iface.Name)),
@@ -22,28 +22,28 @@ func Gen(b *gen.Builder, iface types.Interface, importMap gen.ImportMap, timingA
 		Returns: []types.Param{types.NamedParam{Typ: iface.Name}},
 	}
 
-	b.WriteMethod(importMap, nil, timingStructConstructor, func(b *gen.Builder) {
-		fmt.Fprintf(b, "return %s{\n", timingStruct.Name)
-		fmt.Fprintf(b, "wrapped: p0,\n")
-		fmt.Fprintf(b, "}\n")
+	b.WriteMethod(nil, timingStructConstructor, func(b gen.Builder) {
+		b.WriteLine("return %s{", timingStruct.Name)
+		b.WriteLine("wrapped: p0,")
+		b.WriteLine("}")
 	})
 
 	for _, m := range iface.Methods {
-		b.WriteMethod(importMap, &timingStruct, m, func(b *gen.Builder) {
-			fmt.Fprintf(b, "timer := t.%s.Timer()\n", timingAttr)
-			fmt.Fprintf(b, "defer timer.End(ctx, \"%s\")\n", m.Name)
+		b.WriteMethod(&timingStruct, m, func(b gen.Builder) {
+			b.WriteLine("timer := t.%s.Timer()", timingAttr)
+			b.WriteLine("defer timer.End(ctx, \"%s\")", m.Name)
 			numReturns := len(m.Returns)
 			if numReturns > 0 {
-				fmt.Fprint(b, "return ")
+				b.Write("return ")
 			}
-			fmt.Fprintf(b, "t.wrapped.%s(", m.Name)
+			b.Write("t.wrapped.%s(", m.Name)
 			for i := 0; i < len(m.Params); i++ {
-				fmt.Fprintf(b, "p%d", i)
+				b.Write("p%d", i)
 				if i != len(m.Params)-1 {
-					fmt.Fprint(b, ", ")
+					b.Write(", ")
 				}
 			}
-			fmt.Fprint(b, ")")
+			b.Write(")")
 		})
 	}
 

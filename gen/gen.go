@@ -180,6 +180,16 @@ func buildImportMap(pkg *types.Package) map[string]string {
 			}
 		}
 	}
+
+	for _, p := range resolveStructPackages(pkg.Structs) {
+		if p == pkg.PkgPath {
+			continue
+		}
+		if _, ok := importMap[p]; !ok {
+			importMap[p] = fmt.Sprintf("i%d", len(importMap))
+		}
+	}
+
 	return importMap
 }
 
@@ -191,6 +201,16 @@ func resolveMethodPackages(methods []types.Method) []string {
 		}
 		for _, p := range m.Returns {
 			pkgs = append(pkgs, resolvePackages(p)...)
+		}
+	}
+	return pkgs
+}
+
+func resolveStructPackages(structs []types.Struct) []string {
+	var pkgs []string
+	for _, s := range structs {
+		for _, a := range s.Attrs {
+			pkgs = append(pkgs, resolvePackages(a.Type)...)
 		}
 	}
 	return pkgs

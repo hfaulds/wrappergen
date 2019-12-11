@@ -10,8 +10,8 @@ import (
 
 func Gen(b gen.Builder, iface types.Interface, strct types.Struct, wrappers []string) {
 	attrTypes := make([]types.Param, 0, len(strct.Attrs))
-	for _, typ := range strct.Attrs {
-		attrTypes = append(attrTypes, typ)
+	for _, attr := range strct.Attrs {
+		attrTypes = append(attrTypes, attr.Type)
 	}
 
 	b.WriteMethod(nil, types.Method{
@@ -26,8 +26,8 @@ func Gen(b gen.Builder, iface types.Interface, strct types.Struct, wrappers []st
 
 		b.WriteLine("%s{", strct.Name)
 		i := 0
-		for name, _ := range strct.Attrs {
-			b.Write("%s: a%d,\n", name, i)
+		for _, attr := range strct.Attrs {
+			b.Write("%s: a%d,\n", attr.Name, i)
 			i++
 		}
 		b.Write("}")

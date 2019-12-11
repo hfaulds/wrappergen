@@ -13,7 +13,7 @@ func Gen(b gen.Builder, iface types.Interface, tracePkg string) string {
 
 	tracingStruct := types.Struct{
 		Name:  fmt.Sprintf("trace%s", strings.Title(iface.Name)),
-		Attrs: map[string]types.Param{"wrapped": types.NamedParam{Typ: iface.Name}},
+		Attrs: []types.Var{{Name: "wrapped", Type: types.NamedParam{Typ: iface.Name}}},
 	}
 
 	b.WriteStruct(tracingStruct)

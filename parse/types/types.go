@@ -15,13 +15,18 @@ type Interface struct {
 
 type Struct struct {
 	Name  string
-	Attrs map[string]Param
+	Attrs []Var
 }
 
 type Method struct {
 	Name    string
 	Params  []Param
 	Returns []Param
+}
+
+type Var struct {
+	Name string
+	Type Param
 }
 
 type Param interface {

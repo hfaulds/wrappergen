@@ -18,8 +18,8 @@ import (
 //go:generate code-gen ./ -interface=Client -struct=client
 //go:generate code-gen ./ -interface=Client -tracing=pkg
 //go:generate code-gen ./ -interface=Client -struct=client -tracing=pkg
-//go:generate code-gen ./ -interface=Client -struct=client -tracing=pkg -o client_gen.go
-//go:generate code-gen ./ -interface=Client -struct=client -timing
+//go:generate code-gen ./ -interface=Client -struct=client -timing=attr
+//go:generate code-gen ./ -interface=Client -struct=client -tracing=pkg -timing=attr -o=client_gen.go
 
 type flags struct {
 	interfaceName string
@@ -76,7 +76,7 @@ func main() {
 	}
 	if len(f.timingAttr) > 0 {
 		if !timing.StructHasTimingAttr(strct, f.timingAttr) {
-			log.Fatal("Struct does not have specific timing attribute")
+			log.Fatalf("Struct does not have specific timing attribute `%s`", f.timingAttr)
 		}
 		timingWrapper := timing.Gen(b, iface, f.timingAttr)
 		wrappers = append(wrappers, timingWrapper)

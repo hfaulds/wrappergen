@@ -78,11 +78,15 @@ func getMethods(itype *gtypes.Interface) []types.Method {
 	return methods
 }
 
-func getAttrs(stype *gtypes.Struct) map[string]types.Param {
-	attrs := make(map[string]types.Param, stype.NumFields())
+func getAttrs(stype *gtypes.Struct) []types.Var {
+	attrs := make([]types.Var, 0, stype.NumFields())
 	for i := 0; i < stype.NumFields(); i++ {
 		field := stype.Field(i)
-		attrs[field.Name()] = getParam(field.Type())
+		attr := types.Var{
+			Name: field.Name(),
+			Type: getParam(field.Type()),
+		}
+		attrs = append(attrs, attr)
 	}
 	return attrs
 }

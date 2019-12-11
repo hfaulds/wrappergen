@@ -11,7 +11,7 @@ import (
 func Gen(b gen.Builder, iface types.Interface, timingAttr string) string {
 	timingStruct := types.Struct{
 		Name:  fmt.Sprintf("time%s", iface.Name),
-		Attrs: map[string]types.Param{"wrapped": types.NamedParam{Typ: iface.Name}},
+		Attrs: []types.Var{{Name: "wrapped", Type: types.NamedParam{Typ: iface.Name}}},
 	}
 
 	b.WriteStruct(timingStruct)
@@ -51,8 +51,8 @@ func Gen(b gen.Builder, iface types.Interface, timingAttr string) string {
 }
 
 func StructHasTimingAttr(strct types.Struct, timingAttr string) bool {
-	for attrName := range strct.Attrs {
-		if attrName == timingAttr {
+	for _, attr := range strct.Attrs {
+		if attr.Name == timingAttr {
 			return true
 		}
 	}

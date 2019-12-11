@@ -46,8 +46,8 @@ func (b builder) WriteTo(w io.Writer) (int, error) {
 
 func (b builder) WriteStruct(strct types.Struct) {
 	b.WriteLine("\ntype %s struct {", strct.Name)
-	for attrName, attrType := range strct.Attrs {
-		b.WriteLine("%s %s", attrName, b.resolveParam(attrType))
+	for _, attr := range strct.Attrs {
+		b.WriteLine("%s %s", attr.Name, b.resolveParam(attr.Type))
 	}
 	b.WriteLine("}")
 }

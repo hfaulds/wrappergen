@@ -12,7 +12,7 @@ func Gen(b gen.Builder, iface types.Interface, tracePkg string) string {
 	b.WriteLine("import trace \"%s\"", tracePkg)
 
 	tracingStruct := types.Struct{
-		Name:  fmt.Sprintf("trace%s", iface.Name),
+		Name:  fmt.Sprintf("trace%s", strings.Title(iface.Name)),
 		Attrs: map[string]types.Param{"wrapped": types.NamedParam{Typ: iface.Name}},
 	}
 

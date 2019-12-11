@@ -60,7 +60,7 @@ func (b builder) WriteMethod(strct *types.Struct, method types.Method, callback 
 	generateMethodSig(b.buf, "", method.Name, b.resolveParams(method.Params), b.resolveParams(method.Returns))
 	b.WriteLine(" {")
 	callback(b)
-	b.WriteLine("\n}")
+	b.WriteLine("}")
 }
 
 func (b builder) WriteLine(str string, a ...interface{}) {

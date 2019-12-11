@@ -2,14 +2,13 @@ package tracing
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/hfaulds/tracer/gen"
 	"github.com/hfaulds/tracer/parse/types"
 )
 
-func Gen(b io.Writer, iface types.Interface, importMap gen.ImportMap, tracePkg string) string {
+func Gen(b *gen.Builder, iface types.Interface, importMap gen.ImportMap, tracePkg string) string {
 	fmt.Fprintf(b, "import trace \"%s\"\n", tracePkg)
 
 	tracingStruct := types.Struct{
@@ -17,7 +16,7 @@ func Gen(b io.Writer, iface types.Interface, importMap gen.ImportMap, tracePkg s
 		Attrs: map[string]types.Param{"wrapped": types.NamedParam{Typ: iface.Name}},
 	}
 
-	gen.GenStruct(b, importMap, tracingStruct)
+	b.WriteStruct(importMap, tracingStruct)
 
 	tracingStructConstructor := types.Method{
 		Name:    fmt.Sprintf("New%sTracer", strings.Title(iface.Name)),
@@ -25,14 +24,14 @@ func Gen(b io.Writer, iface types.Interface, importMap gen.ImportMap, tracePkg s
 		Returns: []types.Param{types.NamedParam{Typ: iface.Name}},
 	}
 
-	gen.GenMethod(b, importMap, nil, tracingStructConstructor, func(b io.Writer) {
+	b.WriteMethod(importMap, nil, tracingStructConstructor, func(b *gen.Builder) {
 		fmt.Fprintf(b, "return %s{\n", tracingStruct.Name)
 		fmt.Fprintf(b, "wrapped: p0,\n")
 		fmt.Fprintf(b, "}\n")
 	})
 
 	for _, m := range iface.Methods {
-		gen.GenMethod(b, importMap, &tracingStruct, m, func(b io.Writer) {
+		b.WriteMethod(importMap, &tracingStruct, m, func(b *gen.Builder) {
 			// only add tracing if there a context
 			offset, ok := getFirstContextParamOffset(m)
 			if ok {
@@ -69,7 +68,7 @@ func getFirstContextParamOffset(m types.Method) (int, bool) {
 	return -1, false
 }
 
-func generateWrappedCall(b io.Writer, m types.Method, contextOffset int) {
+func generateWrappedCall(b *gen.Builder, m types.Method, contextOffset int) {
 	fmt.Fprint(b, "")
 	numReturns := len(m.Returns)
 	errorOffset, returnsError := getLastErrorReturnOffset(m)

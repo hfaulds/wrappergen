@@ -10,20 +10,19 @@ import (
 	"github.com/hfaulds/tracer/parse/types"
 )
 
-type Buffer struct {
+type Builder struct {
 	bytes.Buffer
 }
 
-func (b *Buffer) WriteTo(w io.Writer) (int, error) {
+func (b *Builder) WriteTo(w io.Writer) (int, error) {
 	formatted, err := format.Source(b.Bytes())
 	if err != nil {
-		fmt.Println(b.String())
 		return 0, err
 	}
 	return w.Write([]byte(formatted))
 }
 
-func GenStruct(b io.Writer, importMap ImportMap, strct types.Struct) {
+func (b *Builder) WriteStruct(importMap ImportMap, strct types.Struct) {
 	fmt.Fprintf(b, "\ntype %s struct {\n", strct.Name)
 	for attrName, attrType := range strct.Attrs {
 		fmt.Fprintf(b, "%s %s\n", attrName, resolveParam(importMap, attrType))
@@ -31,7 +30,7 @@ func GenStruct(b io.Writer, importMap ImportMap, strct types.Struct) {
 	fmt.Fprintf(b, "}\n")
 }
 
-func GenMethod(b io.Writer, importMap ImportMap, strct *types.Struct, method types.Method, callback func(b io.Writer)) {
+func (b *Builder) WriteMethod(importMap ImportMap, strct *types.Struct, method types.Method, callback func(b *Builder)) {
 	fmt.Fprint(b, "\nfunc ")
 	if strct != nil {
 		fmt.Fprintf(b, "(t %s) ", strct.Name)

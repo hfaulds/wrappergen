@@ -26,9 +26,9 @@ func Gen(b io.Writer, iface types.Interface, importMap gen.ImportMap, tracePkg s
 	}
 
 	gen.GenMethod(b, importMap, nil, tracingStructConstructor, func(b io.Writer) {
-		fmt.Fprintf(b, "\treturn %s{\n", tracingStruct.Name)
-		fmt.Fprintf(b, "\t\twrapped: p0,\n")
-		fmt.Fprintf(b, "\t}\n")
+		fmt.Fprintf(b, "return %s{\n", tracingStruct.Name)
+		fmt.Fprintf(b, "wrapped: p0,\n")
+		fmt.Fprintf(b, "}\n")
 	})
 
 	for _, m := range iface.Methods {
@@ -36,8 +36,8 @@ func Gen(b io.Writer, iface types.Interface, importMap gen.ImportMap, tracePkg s
 			// only add tracing if there a context
 			offset, ok := getFirstContextParamOffset(m)
 			if ok {
-				fmt.Fprintf(b, "\tctx, span := trace.ChildSpan(p%d, trace.OpName(\"%s\"))\n", offset, m.Name)
-				fmt.Fprint(b, "\tdefer span.Finish()\n")
+				fmt.Fprintf(b, "ctx, span := trace.ChildSpan(p%d, trace.OpName(\"%s\"))\n", offset, m.Name)
+				fmt.Fprint(b, "defer span.Finish()\n")
 			}
 			generateWrappedCall(b, m, offset)
 		})
@@ -70,7 +70,7 @@ func getFirstContextParamOffset(m types.Method) (int, bool) {
 }
 
 func generateWrappedCall(b io.Writer, m types.Method, contextOffset int) {
-	fmt.Fprint(b, "\t")
+	fmt.Fprint(b, "")
 	numReturns := len(m.Returns)
 	errorOffset, returnsError := getLastErrorReturnOffset(m)
 	if numReturns > 0 {
@@ -99,7 +99,7 @@ func generateWrappedCall(b io.Writer, m types.Method, contextOffset int) {
 	}
 	fmt.Fprint(b, ")\n")
 	if returnsError {
-		fmt.Fprint(b, "\treturn ")
+		fmt.Fprint(b, "return ")
 		for i := 0; i < numReturns; i++ {
 			if i == errorOffset {
 				fmt.Fprintf(b, "span.WithError(r%d)", i)

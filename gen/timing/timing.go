@@ -24,15 +24,15 @@ func Gen(b io.Writer, iface types.Interface, importMap gen.ImportMap, timingAttr
 	}
 
 	gen.GenMethod(b, importMap, nil, timingStructConstructor, func(b io.Writer) {
-		fmt.Fprintf(b, "\treturn %s{\n", timingStruct.Name)
-		fmt.Fprintf(b, "\t\twrapped: p0,\n")
-		fmt.Fprintf(b, "\t}\n")
+		fmt.Fprintf(b, "return %s{\n", timingStruct.Name)
+		fmt.Fprintf(b, "wrapped: p0,\n")
+		fmt.Fprintf(b, "}\n")
 	})
 
 	for _, m := range iface.Methods {
 		gen.GenMethod(b, importMap, &timingStruct, m, func(b io.Writer) {
-			fmt.Fprintf(b, "\ttimer := t.%s.Timer()\n", timingAttr)
-			fmt.Fprintf(b, "\tdefer timer.End(ctx, \"%s\")\n\t", m.Name)
+			fmt.Fprintf(b, "timer := t.%s.Timer()\n", timingAttr)
+			fmt.Fprintf(b, "defer timer.End(ctx, \"%s\")\n", m.Name)
 			numReturns := len(m.Returns)
 			if numReturns > 0 {
 				fmt.Fprint(b, "return ")
@@ -44,10 +44,9 @@ func Gen(b io.Writer, iface types.Interface, importMap gen.ImportMap, timingAttr
 					fmt.Fprint(b, ", ")
 				}
 			}
-			fmt.Fprint(b, ")\n")
+			fmt.Fprint(b, ")")
 		})
 	}
-	fmt.Fprint(b, "\n")
 
 	return timingStructConstructor.Name
 }

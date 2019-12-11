@@ -1,23 +1,38 @@
 package gen
 
 import (
+	"bytes"
 	"fmt"
+	"go/format"
 	"io"
 	"strings"
 
 	"github.com/hfaulds/tracer/parse/types"
 )
 
+type Buffer struct {
+	bytes.Buffer
+}
+
+func (b *Buffer) WriteTo(w io.Writer) (int, error) {
+	formatted, err := format.Source(b.Bytes())
+	if err != nil {
+		fmt.Println(b.String())
+		return 0, err
+	}
+	return w.Write([]byte(formatted))
+}
+
 func GenStruct(b io.Writer, importMap ImportMap, strct types.Struct) {
-	fmt.Fprintf(b, "\n\ntype %s struct {\n", strct.Name)
-	for _, attr := range strct.Attrs {
-		fmt.Fprintf(b, "\t%s %s\n", resolveParam(importMap, attr))
+	fmt.Fprintf(b, "\ntype %s struct {\n", strct.Name)
+	for attrName, attrType := range strct.Attrs {
+		fmt.Fprintf(b, "%s %s\n", attrName, resolveParam(importMap, attrType))
 	}
 	fmt.Fprintf(b, "}\n")
 }
 
 func GenMethod(b io.Writer, importMap ImportMap, strct *types.Struct, method types.Method, callback func(b io.Writer)) {
-	fmt.Fprint(b, "\n\nfunc ")
+	fmt.Fprint(b, "\nfunc ")
 	if strct != nil {
 		fmt.Fprintf(b, "(t %s) ", strct.Name)
 	}
@@ -70,7 +85,7 @@ func resolveParam(importMap map[string]string, p types.Param) string {
 		} else {
 			fmt.Fprint(&b, "interface {")
 			for _, m := range tp.Methods {
-				fmt.Fprint(&b, "\n\t")
+				fmt.Fprint(&b, "\n")
 				params := resolveParams(importMap, m.Params)
 				returns := resolveParams(importMap, m.Returns)
 				generateMethodSig(&b, "", m.Name, params, returns)

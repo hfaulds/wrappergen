@@ -5,8 +5,13 @@ import (
 	"strings"
 
 	"github.com/hfaulds/tracer/gen"
+	"github.com/hfaulds/tracer/flags"
 	"github.com/hfaulds/tracer/parse/types"
 )
+
+func Tracing(rootConf *flags.RootConfig, tracingConf *flags.TracingConfig) error {
+	return nil
+}
 
 func Gen(b gen.Builder, iface types.Interface, tracePkg string) string {
 	b.WriteLine("import trace \"%s\"", tracePkg)

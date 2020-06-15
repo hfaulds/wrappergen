@@ -1,16 +1,20 @@
 package main
 
 import (
-	"flag"
+	"context"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/spf13/cobra"
+
 	"github.com/hfaulds/tracer/gen"
 	"github.com/hfaulds/tracer/gen/constructor"
 	"github.com/hfaulds/tracer/gen/timing"
 	"github.com/hfaulds/tracer/gen/tracing"
+	"github.com/hfaulds/tracer/flags"
 	"github.com/hfaulds/tracer/parse"
 	"github.com/hfaulds/tracer/parse/types"
 )
@@ -21,46 +25,66 @@ import (
 //go:generate code-gen ./ -interface=Client -struct=client -timing=attr
 //go:generate code-gen ./ -interface=Client -struct=client -tracing=pkg -timing=attr -o=client_gen.go
 
-type flags struct {
-	interfaceName string
-	structName    string
-	tracingPkg    string
-	timingAttr    string
-	output        string
+var rootConf = &flags.RootConfig{}
+var rootCmd = &cobra.Command{
+  Use:   "gen",
+  Short: "",
+  Args: cobra.NoArgs,
+}
+
+var tracingConf = &flags.TracingConfig{}
+var tracingCmd = &cobra.Command{
+  Use:   "tracing",
+  Short: "",
+  Args: cobra.NoArgs,
+  Run: runCommand(func() error {
+	  return tracing.Tracing(rootConf, tracingConf)
+  }),
+}
+
+
+var timingCmd = &cobra.Command{
+  Use:   "timing",
+  Short: "",
+  Args: cobra.NoArgs,
+  Run: runCommand(func() error {
+	  return timing.Timing(rootConf)
+  }),
+}
+
+var constructorConf = &flags.ConstructorConfig{}
+var constructorCmd = &cobra.Command{
+  Use:   "constructor",
+  Short: "",
+  Args: cobra.NoArgs,
+  Run: func(cmd *cobra.Command, args []string) {
+  },
+}
+
+func runCommand(fn func() error) func(*cobra.Command, []string) {
+	return func(cmd *cobra.Command, args[]string) {
+		err := fn()
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
 }
 
 func main() {
-	f := new(flags)
-	flag.StringVar(&f.interfaceName, "interface", "", "Interface to generate wrappers for")
-	flag.StringVar(&f.structName, "struct", "", "Toggles constructor generation and the struct to return. When used in combination with other flags it will construct the generated wrappers.")
-	flag.StringVar(&f.tracingPkg, "tracing", "", "Toggles tracing wrapper generation using given package")
-	flag.StringVar(&f.timingAttr, "timing", "", "Toggles timing wrapper generation using struct attribute")
+	rootCmd.PersistentFlags().StringVar(&rootConf.Outdir, "outdir", "./tracing", "directory to write mocks to")
+	rootCmd.PersistentFlags().StringVar(&rootConf.Outpkg, "outpkg", "tracing", "name of generated package")
+	rootCmd.PersistentFlags().BoolVar(&rootConf.Inpkg, "inpkg", false, "generate a mock that goes inside the original package")
+	rootCmd.PersistentFlags().StringVar(&rootConf.Dir, "dir", ".", "directory to search for interface")
 
-	flag.StringVar(&f.output, "o", "", "Output file; defaults to stdout.")
+	tracingCmd.Flags().StringVar(&tracingConf.InterfaceName, "name", "", "name of interface to generate wrappers for")
+	tracingCmd.MarkFlagRequired("name")
+	tracingCmd.MarkFlagRequired("dir")
 
-	flag.Parse()
-	if flag.NArg() < 1 {
-		usage()
-		log.Fatalf("Expected at least one arguments, received %d", flag.NArg())
-	}
-	if len(f.interfaceName) < 1 {
-		log.Fatal("required flag -interface missing")
-	}
-	if len(f.structName) < 1 {
-		log.Fatal("required flag -struct missing")
-	}
+	constructorCmd.Flags().StringVar(&constructorConf.StructName, "name", "", "name of struct to wrap constructor for")
 
-	pkg, err := parse.ParseDir(flag.Arg(0))
-	if err != nil {
-		log.Fatalf("Failed to parse %s", err)
-	}
+	runCommand(func() error {
+		return rootCmd.ExecuteContext(context.Background())
+	})
 
-	b := gen.NewBuilder(pkg)
-
-	iface, ok := findInterface(pkg, f.interfaceName)
-	if !ok {
-		log.Fatalf("Could not find interface: %s", f.interfaceName)
-	}
 	strct, ok := findStruct(pkg, f.structName)
 	if !ok {
 		log.Fatalf("Could not find struct: %s", f.structName)
@@ -71,7 +95,6 @@ func main() {
 		if tracing.ShouldSkipInterface(iface) {
 			log.Fatal("Could not find any methods taking context")
 		}
-		tracingWrapper := tracing.Gen(b, iface, f.tracingPkg)
 		wrappers = append(wrappers, tracingWrapper)
 	}
 	if len(f.timingAttr) > 0 {
@@ -101,14 +124,6 @@ func main() {
 	}
 }
 
-func usage() {
-	io.WriteString(os.Stderr, usageText)
-	flag.PrintDefaults()
-}
-
-const usageText = `
-grep [-trace=Interface] [-o=dest.go] [file]
-`
 
 func findInterface(pkg *types.Package, name string) (types.Interface, bool) {
 	for _, iface := range pkg.Interfaces {

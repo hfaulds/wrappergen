@@ -5,37 +5,44 @@ import (
 	"strings"
 
 	"github.com/hfaulds/tracer/gen"
-	"github.com/hfaulds/tracer/flags"
 	"github.com/hfaulds/tracer/parse/types"
 )
 
-func Timing(rootConf *flags.RootConfig) error {
-	return nil
+var timingType = types.NamedParam{
+	Pkg: "github.com/hfaulds/tracer/timing",
+	Typ: "Timing",
 }
 
-func Gen(b gen.Builder, iface types.Interface, timingAttr string) string {
+func Gen(b gen.Builder, iface types.Interface) string {
 	timingStruct := types.Struct{
-		Name:  fmt.Sprintf("time%s", iface.Name),
-		Attrs: []types.Var{{Name: "wrapped", Type: types.NamedParam{Typ: iface.Name}}},
+		Name: fmt.Sprintf("time%s", iface.Name),
+		Attrs: []types.Var{
+			{Name: "wrapped", Type: types.NamedParam{Typ: iface.Name}},
+			{Name: "timing", Type: timingType},
+		},
 	}
 
 	b.WriteStruct(timingStruct)
 
 	timingStructConstructor := types.Method{
-		Name:    fmt.Sprintf("New%sTimer", strings.Title(iface.Name)),
-		Params:  []types.Param{types.NamedParam{Typ: iface.Name}},
+		Name: fmt.Sprintf("New%sTimer", strings.Title(iface.Name)),
+		Params: []types.Param{
+			types.NamedParam{Typ: iface.Name},
+			timingType,
+		},
 		Returns: []types.Param{types.NamedParam{Typ: iface.Name}},
 	}
 
 	b.WriteMethod(nil, timingStructConstructor, func(b gen.Builder) {
 		b.WriteLine("return %s{", timingStruct.Name)
 		b.WriteLine("wrapped: p0,")
+		b.WriteLine("timing: p1,")
 		b.WriteLine("}")
 	})
 
 	for _, m := range iface.Methods {
 		b.WriteMethod(&timingStruct, m, func(b gen.Builder) {
-			b.WriteLine("timer := t.%s.Timer()", timingAttr)
+			b.WriteLine("timer := t.timing.Timer()")
 			b.WriteLine("defer timer.End(ctx, \"%s\")", m.Name)
 			numReturns := len(m.Returns)
 			if numReturns > 0 {
@@ -53,13 +60,4 @@ func Gen(b gen.Builder, iface types.Interface, timingAttr string) string {
 	}
 
 	return timingStructConstructor.Name
-}
-
-func StructHasTimingAttr(strct types.Struct, timingAttr string) bool {
-	for _, attr := range strct.Attrs {
-		if attr.Name == timingAttr {
-			return true
-		}
-	}
-	return false
 }

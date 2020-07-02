@@ -5,33 +5,40 @@ import (
 	"strings"
 
 	"github.com/hfaulds/tracer/gen"
-	"github.com/hfaulds/tracer/flags"
 	"github.com/hfaulds/tracer/parse/types"
 )
 
-func Tracing(rootConf *flags.RootConfig, tracingConf *flags.TracingConfig) error {
-	return nil
+var traceType = types.NamedParam{
+	Pkg: "github.com/hfaulds/tracer/tracing",
+	Typ: "Tracing",
 }
 
-func Gen(b gen.Builder, iface types.Interface, tracePkg string) string {
-	b.WriteLine("import trace \"%s\"", tracePkg)
+func Gen(b gen.Builder, iface types.Interface) string {
+	b.WriteLine("import trace \"%s\"", traceType.Pkg)
 
 	tracingStruct := types.Struct{
-		Name:  fmt.Sprintf("trace%s", strings.Title(iface.Name)),
-		Attrs: []types.Var{{Name: "wrapped", Type: types.NamedParam{Typ: iface.Name}}},
+		Name: fmt.Sprintf("trace%s", strings.Title(iface.Name)),
+		Attrs: []types.Var{
+			{Name: "wrapped", Type: types.NamedParam{Typ: iface.Name}},
+			{Name: "trace", Type: traceType},
+		},
 	}
 
 	b.WriteStruct(tracingStruct)
 
 	tracingStructConstructor := types.Method{
-		Name:    fmt.Sprintf("New%sTracer", strings.Title(iface.Name)),
-		Params:  []types.Param{types.NamedParam{Typ: iface.Name}},
+		Name: fmt.Sprintf("New%sTracer", strings.Title(iface.Name)),
+		Params: []types.Param{
+			types.NamedParam{Typ: iface.Name},
+			traceType,
+		},
 		Returns: []types.Param{types.NamedParam{Typ: iface.Name}},
 	}
 
 	b.WriteMethod(nil, tracingStructConstructor, func(b gen.Builder) {
 		b.WriteLine("return %s{", tracingStruct.Name)
 		b.WriteLine("wrapped: p0,")
+		b.WriteLine("trace: p1,")
 		b.WriteLine("}")
 	})
 
@@ -40,7 +47,7 @@ func Gen(b gen.Builder, iface types.Interface, tracePkg string) string {
 			// only add tracing if there a context
 			offset, ok := getFirstContextParamOffset(m)
 			if ok {
-				b.WriteLine("ctx, span := trace.ChildSpan(p%d, trace.OpName(\"%s\"))", offset, m.Name)
+				b.WriteLine("ctx, span := t.trace.ChildSpan(p%d, t.trace.OpName(\"%s\"))", offset, m.Name)
 				b.WriteLine("defer span.Finish()")
 			}
 			generateWrappedCall(b, m, offset)

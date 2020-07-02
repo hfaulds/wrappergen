@@ -12,7 +12,7 @@ import (
 )
 
 type Builder interface {
-	WriteTo(io.Writer) (int, error)
+	Flush() error
 
 	WriteStruct(types.Struct)
 	WriteMethod(*types.Struct, types.Method, func(b Builder))
@@ -21,12 +21,14 @@ type Builder interface {
 }
 
 type builder struct {
+	out       io.Writer
 	buf       *bytes.Buffer
 	importMap map[string]string
 }
 
-func NewBuilder(pkg *types.Package) Builder {
+func NewBuilder(pkg *types.Package, out io.Writer) Builder {
 	b := builder{
+		out:       out,
 		buf:       &bytes.Buffer{},
 		importMap: buildImportMap(pkg),
 	}
@@ -36,12 +38,13 @@ func NewBuilder(pkg *types.Package) Builder {
 	return b
 }
 
-func (b builder) WriteTo(w io.Writer) (int, error) {
+func (b builder) Flush() error {
 	formatted, err := format.Source(b.buf.Bytes())
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return w.Write([]byte(formatted))
+	_, err = b.out.Write([]byte(formatted))
+	return err
 }
 
 func (b builder) WriteStruct(strct types.Struct) {

@@ -14,56 +14,61 @@ var traceType = types.NamedParam{
 }
 
 var TracingWrapper = func(iface types.Interface) gen.Wrapper {
-	return gen.Wrapper {
+	return gen.Wrapper{
 		Constructor: constructorName(iface),
-		Arguments: []types.NamedParam{ traceType },
+		Arguments:   []types.NamedParam{traceType},
 	}
 }
 
-func Gen(b gen.Builder, iface types.Interface) string {
-	b.AddImport("tracing", traceType.Pkg)
-	b.WriteImports()
+func Gen(b gen.Builder, iface types.Interface) {
+	tracingStruct := gen.Struct{
+		Struct: types.Struct{
+			Name: fmt.Sprintf("trace%s", strings.Title(iface.Name)),
+			Attrs: []types.Var{
+				{Name: "wrapped", Type: types.NamedParam{Typ: iface.Name}},
+				{Name: "trace", Type: traceType},
+			},
+		},
+		Methods: make([]gen.Method, len(iface.Methods)),
+	}
 
-	tracingStruct := types.Struct{
-		Name: fmt.Sprintf("trace%s", strings.Title(iface.Name)),
-		Attrs: []types.Var{
-			{Name: "wrapped", Type: types.NamedParam{Typ: iface.Name}},
-			{Name: "trace", Type: traceType},
+	for i, m := range iface.Methods {
+		tracingStruct.Methods[i] = gen.Method{
+			Method: m,
+			Callback: func(b gen.Builder, m types.Method) {
+				// only add tracing if there a context
+				offset, ok := getFirstContextParamOffset(m)
+				if ok {
+					b.WriteLine("ctx, span := t.trace.ChildSpan(p%d, t.trace.OpName(\"%s\"))", offset, m.Name)
+					b.WriteLine("defer span.Finish()")
+				}
+				generateWrappedCall(b, m, offset)
+			},
+		}
+	}
+
+	file := gen.File{
+		Structs: []gen.Struct{tracingStruct},
+		Methods: []gen.Method{
+			{
+				Method: types.Method{
+					Name: constructorName(iface),
+					Params: []types.Param{
+						types.NamedParam{Typ: iface.Name},
+						traceType,
+					},
+					Returns: []types.Param{types.NamedParam{Typ: iface.Name}},
+				},
+				Callback: func(b gen.Builder, _ types.Method) {
+					b.WriteLine("return %s{", tracingStruct.Name)
+					b.WriteLine("wrapped: p0,")
+					b.WriteLine("trace: p1,")
+					b.WriteLine("}")
+				},
+			},
 		},
 	}
-
-	b.WriteStruct(tracingStruct)
-
-	tracingStructConstructor := types.Method{
-		Name: constructorName(iface),
-		Params: []types.Param{
-			types.NamedParam{Typ: iface.Name},
-			traceType,
-		},
-		Returns: []types.Param{types.NamedParam{Typ: iface.Name}},
-	}
-
-	b.WriteMethod(nil, tracingStructConstructor, func(b gen.Builder) {
-		b.WriteLine("return %s{", tracingStruct.Name)
-		b.WriteLine("wrapped: p0,")
-		b.WriteLine("trace: p1,")
-		b.WriteLine("}")
-	})
-
-	for _, m := range iface.Methods {
-		b.WriteMethod(&tracingStruct, m, func(b gen.Builder) {
-			// only add tracing if there a context
-			offset, ok := getFirstContextParamOffset(m)
-			if ok {
-				b.WriteLine("ctx, span := t.trace.ChildSpan(p%d, t.trace.OpName(\"%s\"))", offset, m.Name)
-				b.WriteLine("defer span.Finish()")
-			}
-			generateWrappedCall(b, m, offset)
-		})
-	}
-	b.WriteLine("")
-
-	return tracingStructConstructor.Name
+	b.WriteFile(file)
 }
 
 func ShouldSkipInterface(i types.Interface) bool {
@@ -146,6 +151,6 @@ func getLastErrorReturnOffset(m types.Method) (int, bool) {
 	return -1, false
 }
 
-func constructorName(iface types.Interface) string{
+func constructorName(iface types.Interface) string {
 	return fmt.Sprintf("New%sTracer", strings.Title(iface.Name))
 }

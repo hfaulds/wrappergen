@@ -21,7 +21,6 @@ func Timing(rootFlags *RootFlags, timingFlags *TimingFlags) error {
 	if err != nil {
 		return err
 	}
-	defer rootConf.Builder.Flush()
 
 	iface, ok := rootConf.Pkg.FindInterface(timingFlags.InterfaceName)
 	if !ok {
@@ -29,5 +28,8 @@ func Timing(rootFlags *RootFlags, timingFlags *TimingFlags) error {
 	}
 
 	timing.Gen(rootConf.Builder, iface)
+
+	rootConf.Builder.Flush()
+
 	return nil
 }

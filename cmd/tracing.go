@@ -21,7 +21,6 @@ func Tracing(rootFlags *RootFlags, tracingFlags *TracingFlags) error {
 	if err != nil {
 		return err
 	}
-	defer rootConf.Builder.Flush()
 
 	iface, ok := rootConf.Pkg.FindInterface(tracingFlags.InterfaceName)
 	if !ok {
@@ -33,5 +32,8 @@ func Tracing(rootFlags *RootFlags, tracingFlags *TracingFlags) error {
 	}
 
 	tracing.Gen(rootConf.Builder, iface)
+
+	rootConf.Builder.Flush()
+
 	return nil
 }

@@ -13,8 +13,16 @@ var traceType = types.NamedParam{
 	Typ: "Tracing",
 }
 
+var TracingWrapper = func(iface types.Interface) gen.Wrapper {
+	return gen.Wrapper {
+		Constructor: constructorName(iface),
+		Arguments: []types.NamedParam{ traceType },
+	}
+}
+
 func Gen(b gen.Builder, iface types.Interface) string {
-	b.WriteLine("import trace \"%s\"", traceType.Pkg)
+	b.AddImport("tracing", traceType.Pkg)
+	b.WriteImports()
 
 	tracingStruct := types.Struct{
 		Name: fmt.Sprintf("trace%s", strings.Title(iface.Name)),
@@ -27,7 +35,7 @@ func Gen(b gen.Builder, iface types.Interface) string {
 	b.WriteStruct(tracingStruct)
 
 	tracingStructConstructor := types.Method{
-		Name: fmt.Sprintf("New%sTracer", strings.Title(iface.Name)),
+		Name: constructorName(iface),
 		Params: []types.Param{
 			types.NamedParam{Typ: iface.Name},
 			traceType,
@@ -136,4 +144,8 @@ func getLastErrorReturnOffset(m types.Method) (int, bool) {
 		}
 	}
 	return -1, false
+}
+
+func constructorName(iface types.Interface) string{
+	return fmt.Sprintf("New%sTracer", strings.Title(iface.Name))
 }

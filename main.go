@@ -41,13 +41,13 @@ var (
 		}),
 	}
 
-	constructorConf = &cmd.ConstructorConfig{}
-	constructorCmd  = &cobra.Command{
+	constructorFlags = &cmd.ConstructorFlags{}
+	constructorCmd   = &cobra.Command{
 		Use:   "constructor",
 		Short: "",
 		Args:  cobra.NoArgs,
 		Run: runCommand(func() error {
-			return nil
+			return cmd.Constructor(rootFlags, constructorFlags)
 		}),
 	}
 )
@@ -72,7 +72,7 @@ func main() {
 	timingFlags.Init(timingCmd)
 
 	rootCmd.AddCommand(constructorCmd)
-	constructorConf.Init(constructorCmd)
+	constructorFlags.Init(constructorCmd)
 
 	rootCmd.Execute()
 }

@@ -13,7 +13,17 @@ var timingType = types.NamedParam{
 	Typ: "Timing",
 }
 
+var TimingWrapper = func(iface types.Interface) gen.Wrapper {
+	return gen.Wrapper {
+		Constructor: constructorName(iface),
+		Arguments: []types.NamedParam{ timingType },
+	}
+}
+
 func Gen(b gen.Builder, iface types.Interface) string {
+	b.AddImport("timing", timingType.Pkg)
+	b.WriteImports()
+
 	timingStruct := types.Struct{
 		Name: fmt.Sprintf("time%s", iface.Name),
 		Attrs: []types.Var{
@@ -25,7 +35,7 @@ func Gen(b gen.Builder, iface types.Interface) string {
 	b.WriteStruct(timingStruct)
 
 	timingStructConstructor := types.Method{
-		Name: fmt.Sprintf("New%sTimer", strings.Title(iface.Name)),
+		Name: constructorName(iface),
 		Params: []types.Param{
 			types.NamedParam{Typ: iface.Name},
 			timingType,
@@ -60,4 +70,8 @@ func Gen(b gen.Builder, iface types.Interface) string {
 	}
 
 	return timingStructConstructor.Name
+}
+
+func constructorName(iface types.Interface) string{
+	return fmt.Sprintf("New%sTimer", strings.Title(iface.Name))
 }

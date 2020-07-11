@@ -29,7 +29,7 @@ func Timing(rootFlags *RootFlags, timingFlags *TimingFlags) error {
 
 	timing.Gen(rootConf.Builder, iface)
 
-	rootConf.Builder.Flush()
+	rootConf.Builder.Flush("./gen_" + timingFlags.InterfaceName + "Timing.go")
 
 	return nil
 }

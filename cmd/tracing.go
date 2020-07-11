@@ -33,7 +33,7 @@ func Tracing(rootFlags *RootFlags, tracingFlags *TracingFlags) error {
 
 	tracing.Gen(rootConf.Builder, iface)
 
-	rootConf.Builder.Flush()
+	rootConf.Builder.Flush("./gen_" + tracingFlags.InterfaceName + "Tracing.go")
 
 	return nil
 }

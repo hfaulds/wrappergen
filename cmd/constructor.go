@@ -52,5 +52,5 @@ func Constructor(rootFlags *RootFlags, constructorFlags *ConstructorFlags) error
 
 	constructor.Gen(rootConf.Builder, iface, strct, wrappers)
 
-	return rootConf.Builder.Flush()
+	return rootConf.Builder.Flush("./gen_" + constructorFlags.InterfaceName + "Constructor.go")
 }

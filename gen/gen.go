@@ -2,6 +2,7 @@ package gen
 
 import (
 	"bytes"
+	"os"
 	"fmt"
 	"go/format"
 	"io"
@@ -15,19 +16,19 @@ type Builder interface {
 	Write(string, ...interface{})
 	WriteLine(string, ...interface{})
 	WriteFile(f File)
-	Flush() error
+	Flush(filename string) error
 }
 
 type builder struct {
-	out       io.Writer
+	stdout    bool
 	buf       *bytes.Buffer
 	importMap map[string]string
 	pkg       *types.Package
 }
 
-func NewBuilder(pkg *types.Package, out io.Writer) Builder {
+func NewBuilder(pkg *types.Package, stdout bool) Builder {
 	b := builder{
-		out:       out,
+		stdout:    stdout,
 		buf:       &bytes.Buffer{},
 		importMap: map[string]string{},
 		pkg:       pkg,
@@ -91,12 +92,22 @@ func (b builder) buildImportMap(f File) map[string]string {
 	return importMap
 }
 
-func (b builder) Flush() error {
+func (b builder) Flush(filename string) error {
+	dst := os.Stdout
+	if !b.stdout {
+		f, err := os.Create(filename)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		dst = f
+	}
+
 	formatted, err := format.Source(b.buf.Bytes())
 	if err != nil {
 		return err
 	}
-	_, err = b.out.Write([]byte(formatted))
+	_, err = dst.Write([]byte(formatted))
 	return err
 }
 

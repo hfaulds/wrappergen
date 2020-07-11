@@ -1,4 +1,4 @@
-module github.com/hfaulds/tracer
+module github.com/hfaulds/wrappergen
 
 go 1.13
 

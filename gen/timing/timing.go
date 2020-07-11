@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hfaulds/tracer/gen"
-	"github.com/hfaulds/tracer/parse/types"
+	"github.com/hfaulds/wrappergen/gen"
+	"github.com/hfaulds/wrappergen/parse/types"
 )
 
 var timingType = types.NamedParam{
-	Pkg: "github.com/hfaulds/tracer/timing",
+	Pkg: "github.com/hfaulds/wrappergen/timing",
 	Typ: "Timing",
 }
 

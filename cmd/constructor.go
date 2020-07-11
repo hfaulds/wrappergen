@@ -4,10 +4,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/hfaulds/tracer/gen/constructor"
-	"github.com/hfaulds/tracer/gen"
-	"github.com/hfaulds/tracer/gen/tracing"
-	"github.com/hfaulds/tracer/gen/timing"
+	"github.com/hfaulds/wrappergen/gen/constructor"
+	"github.com/hfaulds/wrappergen/gen"
+	"github.com/hfaulds/wrappergen/gen/tracing"
+	"github.com/hfaulds/wrappergen/gen/timing"
 )
 
 type ConstructorFlags struct {

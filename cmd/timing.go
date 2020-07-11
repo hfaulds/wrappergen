@@ -4,7 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/hfaulds/tracer/gen/timing"
+	"github.com/hfaulds/wrappergen/gen/timing"
 )
 
 type TimingFlags struct {

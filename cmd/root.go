@@ -4,9 +4,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/hfaulds/tracer/gen"
-	"github.com/hfaulds/tracer/parse"
-	"github.com/hfaulds/tracer/parse/types"
+	"github.com/hfaulds/wrappergen/gen"
+	"github.com/hfaulds/wrappergen/parse"
+	"github.com/hfaulds/wrappergen/parse/types"
 )
 
 type RootFlags struct {

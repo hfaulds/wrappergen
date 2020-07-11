@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/hfaulds/tracer/cmd"
+	"github.com/hfaulds/wrappergen/cmd"
 )
 
 //go:generate gen tracing -interface=Client

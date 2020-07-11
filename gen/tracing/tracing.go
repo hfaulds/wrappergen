@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hfaulds/tracer/gen"
-	"github.com/hfaulds/tracer/parse/types"
+	"github.com/hfaulds/wrappergen/gen"
+	"github.com/hfaulds/wrappergen/parse/types"
 )
 
 var traceType = types.NamedParam{
-	Pkg: "github.com/hfaulds/tracer/tracing",
+	Pkg: "github.com/hfaulds/wrappergen/tracing",
 	Typ: "Tracing",
 }
 

@@ -1,7 +1,7 @@
 package gen
 
 import (
-	"github.com/hfaulds/tracer/parse/types"
+	"github.com/hfaulds/wrappergen/parse/types"
 )
 
 type File struct {

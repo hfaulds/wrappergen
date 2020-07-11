@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/tools/go/packages"
 
-	"github.com/hfaulds/tracer/parse/types"
+	"github.com/hfaulds/wrappergen/parse/types"
 )
 
 func ParseDir(dir string) (*types.Package, error) {

@@ -4,6 +4,8 @@
 
 Code-gen to add tracing, timing wrappers and constructors.
 
+Timing and tracing code is very common boilerplate scattered around entire codebases. Wrappergen aims make use of codegen to remove that boilerplate.
+
 ### Example
 
 This repo contains `./example/example.go` which looks like so:
@@ -95,7 +97,7 @@ func (t traceExample) Test(p0 i1.Context, p1 int64) uint8 {
 
 #### Constructor
 
-```
+#```
 $ wrappergen constructor --indir ./example/ --interface Example --struct example --timing --tracing
 ```
 
@@ -118,3 +120,9 @@ func NewExample(p0 string, p1 i0.Tracing, p2 i1.Timing) Example {
 	)
 }
 ```
+
+### TODO
+
+- [ ] Testing
+- [ ] CI
+- [ ] Tidy up code generation

@@ -7,6 +7,24 @@ type Package struct {
 	Structs    []Struct
 }
 
+func (pkg *Package) FindInterface(name string) (Interface, bool) {
+	for _, iface := range pkg.Interfaces {
+		if iface.Name == name {
+			return iface, true
+		}
+	}
+	return Interface{}, false
+}
+
+func (pkg *Package) FindStruct(name string) (Struct, bool) {
+	for _, strct := range pkg.Structs {
+		if strct.Name == name {
+			return strct, true
+		}
+	}
+	return Struct{}, false
+}
+
 type Interface struct {
 	Name    string
 	File    string

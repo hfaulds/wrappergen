@@ -97,7 +97,7 @@ func (t traceExample) Test(p0 i1.Context, p1 int64) uint8 {
 
 #### Constructor
 
-#```
+```
 $ wrappergen constructor --indir ./example/ --interface Example --struct example --timing --tracing
 ```
 

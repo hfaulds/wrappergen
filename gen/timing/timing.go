@@ -22,7 +22,7 @@ var TimingWrapper = func(iface types.Interface) gen.Wrapper {
 
 func Gen(b gen.Builder, iface types.Interface) {
 	timingStruct := gen.Struct{
-		Struct: types.Struct {
+		Struct: types.Struct{
 			Name: fmt.Sprintf("time%s", iface.Name),
 			Attrs: []types.Var{
 				{Name: "wrapped", Type: types.NamedParam{Typ: iface.Name}},
@@ -58,7 +58,7 @@ func Gen(b gen.Builder, iface types.Interface) {
 	}
 
 	file := gen.File{
-		Structs: []gen.Struct{ timingStruct },
+		Structs: []gen.Struct{timingStruct},
 		Methods: []gen.Method{
 			{
 				Method: types.Method{

@@ -31,7 +31,7 @@ func Gen(b gen.Builder, iface types.Interface, strct types.Struct, wrappers []ge
 				},
 				Callback: func(b gen.Builder, _ types.Method) {
 					b.Write("return ")
-					for i := len(wrappers)-1; i >= 0; i-- {
+					for i := len(wrappers) - 1; i >= 0; i-- {
 						wrapper := wrappers[i]
 						b.Write("%s(\n", wrapper.Constructor)
 					}

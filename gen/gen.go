@@ -2,10 +2,10 @@ package gen
 
 import (
 	"bytes"
-	"os"
 	"fmt"
 	"go/format"
 	"io"
+	"os"
 	"sort"
 	"strings"
 

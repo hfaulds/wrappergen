@@ -10,5 +10,6 @@ type Tracing interface {
 }
 
 type Span interface {
+	WithError(error) error
 	Finish()
 }

@@ -31,11 +31,12 @@ func Gen(b gen.Builder, iface types.Interface, strct types.Struct, wrappers []ge
 				},
 				Callback: func(b gen.Builder, _ types.Method) {
 					b.Write("return ")
-					for _, wrapper := range wrappers {
+					for i := len(wrappers)-1; i >= 0; i-- {
+						wrapper := wrappers[i]
 						b.Write("%s(\n", wrapper.Constructor)
 					}
 
-					b.WriteLine("%s{", strct.Name)
+					b.WriteLine("&%s{", strct.Name)
 					argIndex := 0
 					for _, attr := range strct.Attrs {
 						b.Write("%s: p%d,\n", attr.Name, argIndex)

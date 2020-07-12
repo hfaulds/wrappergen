@@ -36,8 +36,11 @@ func Gen(b gen.Builder, iface types.Interface) {
 		timingStruct.Methods[i] = gen.Method{
 			Method: m,
 			Callback: func(b gen.Builder, m types.Method) {
-				b.WriteLine("timer := t.timing.Timer()")
-				b.WriteLine("defer timer.End(ctx, \"%s\")", m.Name)
+				offset, ok := getFirstContextParamOffset(m)
+				if ok {
+					b.WriteLine("timer := t.timing.Timer()")
+					b.WriteLine("defer timer.End(p%d, \"%s\")", offset, m.Name)
+				}
 				numReturns := len(m.Returns)
 				if numReturns > 0 {
 					b.Write("return ")
@@ -81,4 +84,17 @@ func Gen(b gen.Builder, iface types.Interface) {
 
 func constructorName(iface types.Interface) string {
 	return fmt.Sprintf("New%sTimer", strings.Title(iface.Name))
+}
+
+var contextNamedParam = types.NamedParam{Pkg: "context", Typ: "Context"}
+
+func getFirstContextParamOffset(m types.Method) (int, bool) {
+	for i, p := range m.Params {
+		if np, ok := p.(types.NamedParam); ok {
+			if np == contextNamedParam {
+				return i, true
+			}
+		}
+	}
+	return -1, false
 }

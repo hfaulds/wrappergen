@@ -39,7 +39,7 @@ func Gen(b gen.Builder, iface types.Interface) {
 				// only add tracing if there a context
 				offset, ok := getFirstContextParamOffset(m)
 				if ok {
-					b.WriteLine("ctx, span := t.trace.ChildSpan(p%d, t.trace.OpName(\"%s\"))", offset, m.Name)
+					b.WriteLine("ctx, span := t.trace.ChildSpan(p%d, \"%s\")", offset, m.Name)
 					b.WriteLine("defer span.Finish()")
 				}
 				generateWrappedCall(b, m, offset)

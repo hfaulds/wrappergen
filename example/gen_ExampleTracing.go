@@ -17,7 +17,7 @@ type traceExample struct {
 }
 
 func (t traceExample) Test(p0 i1.Context, p1 int64) error {
-	ctx, span := t.trace.ChildSpan(p0, t.trace.OpName("Test"))
+	ctx, span := t.trace.ChildSpan(p0, "Test")
 	defer span.Finish()
 	r0 := t.wrapped.Test(ctx, p1)
 	return span.WithError(r0)
